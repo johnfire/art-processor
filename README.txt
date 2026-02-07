@@ -1,2 +1,2 @@
-a Ai agent to do art management and marketing
+An AI agent to do art management and marketing, ongoing project using Claude, and OpenClaw
 
