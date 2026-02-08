@@ -17,7 +17,7 @@ console = Console()
 class FASOClient:
     """Client for interacting with FASO website."""
     
-    def __init__(self, email: str, password: str, headless: bool = False):
+    def __init__(self, email: str, password: str, headless: bool = False, cookies_file: str = "faso_cookies.json"):
         """
         Initialize FASO client.
         
@@ -25,10 +25,12 @@ class FASOClient:
             email: FASO account email
             password: FASO account password
             headless: Run browser in headless mode (default: False for debugging)
+            cookies_file: Path to save/load cookies for session persistence
         """
         self.email = email
         self.password = password
         self.headless = headless
+        self.cookies_file = Path(cookies_file)
         
         self.browser: Optional[Browser] = None
         self.context: Optional[BrowserContext] = None
@@ -44,19 +46,93 @@ class FASOClient:
         # Launch browser (chromium by default)
         self.browser = await self.playwright.chromium.launch(
             headless=self.headless,
-            slow_mo=100  # Slow down by 100ms to appear more human-like
+            slow_mo=100,  # Slow down by 100ms to appear more human-like
+            args=[
+                '--disable-blink-features=AutomationControlled',  # Hide automation
+                '--disable-dev-shm-usage',
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-web-security',
+            ]
         )
         
-        # Create browser context with viewport
+        # Create browser context with anti-detection settings
         self.context = await self.browser.new_context(
             viewport={'width': 1920, 'height': 1080},
-            user_agent='Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            user_agent='Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            locale='en-US',
+            timezone_id='America/New_York',
+            permissions=['geolocation'],
+            geolocation={'latitude': 40.7128, 'longitude': -74.0060},  # NYC coords
+            extra_http_headers={
+                'Accept-Language': 'en-US,en;q=0.9',
+            }
         )
+        
+        # Add script to hide webdriver property (Cloudflare checks this)
+        await self.context.add_init_script("""
+            Object.defineProperty(navigator, 'webdriver', {
+                get: () => undefined
+            });
+            
+            // Hide Playwright
+            delete window.playwright;
+            
+            // Make chrome object look real
+            window.chrome = {
+                runtime: {}
+            };
+            
+            // Fake plugins
+            Object.defineProperty(navigator, 'plugins', {
+                get: () => [1, 2, 3, 4, 5]
+            });
+            
+            // Fake languages
+            Object.defineProperty(navigator, 'languages', {
+                get: () => ['en-US', 'en']
+            });
+        """)
+        
+        # Load cookies if they exist (skip login if already authenticated)
+        if self.cookies_file.exists():
+            console.print("[cyan]Loading saved session cookies...[/cyan]")
+            import json
+            with open(self.cookies_file, 'r') as f:
+                cookies = json.load(f)
+            await self.context.add_cookies(cookies)
+            console.print("[green]✓ Cookies loaded[/green]")
         
         # Create new page
         self.page = await self.context.new_page()
         
         console.print("[green]✓ Browser started[/green]")
+    
+    async def is_logged_in(self) -> bool:
+        """
+        Check if already logged in (useful when using saved cookies).
+        
+        Returns:
+            True if logged in, False otherwise
+        """
+        if not self.page:
+            return False
+        
+        try:
+            # Try to go to a page that requires login
+            await self.page.goto('https://data.fineartstudioonline.com/', timeout=10000)
+            await self.page.wait_for_load_state('networkidle', timeout=5000)
+            
+            # If URL contains 'login', we're not logged in
+            if 'login' in self.page.url.lower():
+                return False
+            
+            # Check for indicators of being logged in
+            # (menu, dashboard elements, etc.)
+            return True
+            
+        except:
+            return False
     
     async def login(self) -> bool:
         """
@@ -70,6 +146,15 @@ class FASOClient:
             console.print("[red]Error: Browser not started. Call start() first.[/red]")
             return False
         
+        # Check if we're already logged in (from saved cookies)
+        if self.cookies_file.exists():
+            console.print("[cyan]Checking if saved session is still valid...[/cyan]")
+            if await self.is_logged_in():
+                console.print("[green]✓ Already logged in using saved session![/green]")
+                return True
+            else:
+                console.print("[yellow]Saved session expired, logging in again...[/yellow]")
+        
         try:
             console.print("[cyan]Navigating to FASO login page...[/cyan]")
             
@@ -79,23 +164,46 @@ class FASOClient:
             # Wait for page to load
             await self.page.wait_for_load_state('networkidle')
             
+            # Add human-like delay before interacting
+            await asyncio.sleep(2)
+            
             console.print("[cyan]Entering credentials (typing slowly)...[/cyan]")
             
             # Type email slowly (human-like)
-            email_field = await self.page.wait_for_selector('input[type="email"], input[name="email"], input#email')
-            await email_field.click()
-            await email_field.type(self.email, delay=100)  # 100ms between keystrokes
+            # FASO uses name="Email" for the email field
+            email_field = await self.page.wait_for_selector('input[name="Email"]')
             
-            # Small pause between fields
+            # Move mouse to field first (human-like)
+            await email_field.hover()
+            await asyncio.sleep(0.3)
+            
+            await email_field.click()
             await asyncio.sleep(0.5)
+            
+            # Type with random delays between 150-250ms
+            for char in self.email:
+                await email_field.type(char, delay=150 + (hash(char) % 100))
+                
+            # Small pause between fields
+            await asyncio.sleep(1)
             
             # Type password slowly
-            password_field = await self.page.wait_for_selector('input[type="password"], input[name="password"], input#password')
+            # FASO uses name="Password" for the password field
+            password_field = await self.page.wait_for_selector('input[name="Password"]')
+            
+            # Move mouse to password field
+            await password_field.hover()
+            await asyncio.sleep(0.3)
+            
             await password_field.click()
-            await password_field.type(self.password, delay=100)
+            await asyncio.sleep(0.5)
+            
+            # Type password with random delays
+            for char in self.password:
+                await password_field.type(char, delay=150 + (hash(char) % 100))
             
             # Small pause before submitting
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(1)
             
             console.print("[cyan]Submitting login...[/cyan]")
             
@@ -124,6 +232,19 @@ class FASOClient:
             
             await submit_button.click()
             
+            # CAPTCHA appears AFTER submit - pause here!
+            console.print("\n[bold yellow]═══ CAPTCHA CHECKPOINT ═══[/bold yellow]")
+            console.print("[yellow]A 'Verify you are human' screen may appear now.[/yellow]")
+            console.print("[yellow]If it does:[/yellow]")
+            console.print("[yellow]  1. Click the checkbox[/yellow]")
+            console.print("[yellow]  2. Wait for it to verify (checkmark appears)[/yellow]")
+            console.print("[yellow]  3. Click it AGAIN if it asks you to[/yellow]")
+            console.print("[cyan]Waiting 15 seconds for you to complete verification...[/cyan]\n")
+            
+            await asyncio.sleep(15)  # Long pause for manual CAPTCHA solving
+            
+            console.print("[green]Continuing...[/green]")
+            
             # Wait for navigation after login
             console.print("[cyan]Waiting for login to complete...[/cyan]")
             await self.page.wait_for_load_state('networkidle', timeout=10000)
@@ -148,6 +269,14 @@ class FASOClient:
                 return False
             
             console.print(f"[green]✓ Login successful! Current URL: {current_url}[/green]")
+            
+            # Save cookies for future sessions
+            cookies = await self.context.cookies()
+            import json
+            with open(self.cookies_file, 'w') as f:
+                json.dump(cookies, f)
+            console.print(f"[green]✓ Session cookies saved to {self.cookies_file}[/green]")
+            
             return True
             
         except Exception as e:
