@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Theo van Gogh Art Processor - Main CLI Entry Point
+Theo-van-Gogh - Main CLI Entry Point
 Orchestrates the complete painting processing workflow.
 """
 
@@ -25,10 +25,10 @@ console = Console()
 @click.group(invoke_without_command=True)
 @click.pass_context
 def cli(ctx):
-    """Theo van gogh Art Processor - Automated painting metadata generation and management."""
+    """Theo-van-Gogh - Automated painting metadata generation and management."""
     if ctx.invoked_subcommand is None:
         # Show admin mode option at startup
-        console.print("\n[bold cyan] Theo van Gogh Art Processor[/bold cyan]\n")
+        console.print("\n[bold cyan]Theo-van-Gogh[/bold cyan]\n")
         
         if Confirm.ask("Enter admin mode?", default=False):
             settings_path = Path(__file__).parent / "config" / "settings.py"
@@ -69,7 +69,7 @@ def process():
         analyzer = ImageAnalyzer()
         metadata_mgr = MetadataManager()
         
-        ui.print_header("Art Processor - Phase 1")
+        ui.print_header("Theo-van-Gogh - Phase 1")
         
         # Hard-coded category
         category = "new-paintings"
@@ -345,6 +345,75 @@ def list_categories():
 
 @cli.command()
 def verify_config():
+    """Verify configuration and file paths."""
+    ui = CLIInterface()
+    
+    ui.print_header("Configuration Verification")
+    
+    # Check API key
+    if ANTHROPIC_API_KEY:
+        ui.print_success("✓ Anthropic API key configured")
+    else:
+        ui.print_error("✗ Anthropic API key not found")
+    
+    # Check paths
+    paths_ok = True
+    for name, path in [
+        ("Big paintings", PAINTINGS_BIG_PATH),
+        ("Instagram paintings", PAINTINGS_INSTAGRAM_PATH),
+        ("Metadata output", METADATA_OUTPUT_PATH),
+    ]:
+        if path.exists():
+            ui.print_success(f"✓ {name}: {path}")
+        else:
+            ui.print_error(f"✗ {name} not found: {path}")
+            paths_ok = False
+    
+    if paths_ok:
+        ui.print_success("\n✓ All paths configured correctly")
+    else:
+        ui.print_warning("\n⚠ Some paths need to be created or configured")
+
+
+@cli.command()
+def test_faso_login():
+    """Test FASO login and navigation (Phase 2)."""
+    import asyncio
+    from src.faso_client import test_faso_login
+    from config.settings import FASO_EMAIL, FASO_PASSWORD
+    
+    ui = CLIInterface()
+    ui.print_header("FASO Login Test")
+    
+    # Check credentials are configured
+    try:
+        if not FASO_EMAIL or not FASO_PASSWORD:
+            ui.print_error("FASO credentials not configured in settings.py")
+            ui.print_info("Add FASO_EMAIL and FASO_PASSWORD to config/settings.py")
+            return
+    except AttributeError:
+        ui.print_error("FASO credentials not found in settings.py")
+        ui.print_info("Add these lines to config/settings.py:")
+        ui.print_info('FASO_EMAIL = os.getenv("FASO_EMAIL", "your-email@example.com")')
+        ui.print_info('FASO_PASSWORD = os.getenv("FASO_PASSWORD", "your-password")')
+        return
+    
+    ui.print_info(f"Testing login with: {FASO_EMAIL}")
+    ui.print_info("Browser will open in visible mode...")
+    ui.print_info("Watch the browser to see if login works!")
+    
+    # Run the async test
+    success = asyncio.run(test_faso_login(FASO_EMAIL, FASO_PASSWORD))
+    
+    if success:
+        ui.print_success("\n✓ FASO login test successful!")
+    else:
+        ui.print_error("\n✗ FASO login test failed")
+        ui.print_info("Check debug screenshots: debug_*.png")
+
+
+@cli.command()
+def verify_config_old():
     """Verify configuration and paths."""
     ui = CLIInterface()
     

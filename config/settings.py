@@ -13,6 +13,10 @@ load_dotenv()
 # API Configuration
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 
+# FASO Configuration
+FASO_EMAIL = os.getenv("FASO_EMAIL", "")
+FASO_PASSWORD = os.getenv("FASO_PASSWORD", "")
+
 # File Paths
 PAINTINGS_BIG_PATH = Path(os.getenv("PAINTINGS_BIG_PATH", "~/Pictures/my-paintings-big")).expanduser()
 PAINTINGS_INSTAGRAM_PATH = Path(os.getenv("PAINTINGS_INSTAGRAM_PATH", "~/Pictures/my-paintings-instagram")).expanduser()
@@ -32,82 +36,49 @@ DIMENSION_UNIT = "cm"
 
 # Substrate options
 SUBSTRATES = [
-    "Canvas",
-    "Linen",
-    "Panel",
-    "Paper",
-
+    "paper",
+    "board",
+    "canvas",
+    "linen",
 ]
 
 # Medium options
 MEDIUMS = [
-    "Acrylic",
-    "markers and Pens",
-    "Oil",
-    "Watercolor",
-    "Pen and Ink",
-    "Pencil",
-    "Photography",
-    "Wood Block Print"
+    "acrylic",
+    "oil",
+    "watercolor",
+    "pen and ink",
+    "pencil",
 ]
 
 # Subject options
 SUBJECTS = [
-    "Abstract",
-    "Architecture",
-    "Cityscape",
-    "Domestic Animals",
-    "Fantasy",
-    "Figurative",
-    "Genre",
-    "Interior",
-    "Landscape",
-    "Portrait",
-    "Sea Beasties on Titan",
-    "Seascape",
-    "Still Life",
-    "surreal botanical",
-    "Wildlife",
+    "abstract",
+    "landscape",
+    "cityscape",
+    "sea beasties",
+    "fantasy",
+    "portrait",
 ]
 
 # Style options
 STYLES = [
-    "Abstract",
-    "Impressionism",
-    "Realism",
-    "surreal",
-    "surrealism"
+    "abstract",
+    "figurative",
+    "surrealism",
+    "impressionism",
+    "landscape",
+    "cityscape",
 ]
 
 # Collection options
 COLLECTIONS = [
     "Sea Beasties from Titan",
-    "Landscapes and Cityscapes, Real Places",
-    "Fachwerkhäuser",
-    "Imaginary Places",
-    "Surreal Botanicals",
-    "Drawings",
-    "Wood Block Prints",
-    "Oil Paintings",
-    "Other Paintings",
-    "Photography",
-    "Coloring Book Drawings and Finished Works",
-    "Abstract Works, Stand Alones",
-    "Abstracts, Quantum Cubes Collection",
-    "Abstracts, Tiny Life, Biologic Abstract Art",
-    "Abstracts, Inspired by my life in Central America",
-    "Meditations"
+    "Fachwerkhauser",
+    "imaginary places",
+    "oils",
+    "abstracts",
 ]
-
-# Extensible Categories (legacy - kept for backwards compatibility)
-#CATEGORIES = [
-#    "abstract",
-#    "landscapes",
-#    "cityscapes",
-#    "fantasy",
-#    "botanicals",
-#    "surreal",
-#]
 
 # Image Processing Settings
 SUPPORTED_IMAGE_FORMATS = [".jpg", ".jpeg", ".png"]

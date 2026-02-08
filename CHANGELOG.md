@@ -1,5 +1,68 @@
 # Theo-van-Gogh - Changelog
 
+
+## v8 - FASO Login & Navigation (2025-02-08)
+
+### Added
+- **FASO Client Module**: Browser automation for FASO website
+  - Slow typing to avoid bot detection (100ms between keystrokes)
+  - Login to https://data.fineartstudioonline.com/login/
+  - Navigate to Works → Add New Artwork
+  - Screenshot capture at each step for debugging
+  - Context manager support for clean browser lifecycle
+- **Test Command**: `python main.py test-faso-login`
+  - Visible browser mode for debugging
+  - 10-second pause on form so user can inspect
+  - Detailed console logging
+- **FASO Configuration**: Email and password settings
+  - Added to settings.py
+  - Can be set in .env file
+- **Debug Screenshots**: Automatic screenshot capture
+  - debug_after_login.png
+  - debug_works_page.png
+  - add_artwork_form.png
+  - debug_error.png
+
+### New Files
+- **src/faso_client.py** - FASO website client (350+ lines)
+- **FASO_SETUP.md** - Setup and testing guide
+
+### Changed
+- **main.py** - Added test-faso-login command
+- **config/settings.py** - Added FASO_EMAIL and FASO_PASSWORD
+
+### Dependencies
+Requires Playwright for browser automation:
+```bash
+pip install playwright
+playwright install chromium
+```
+
+### Usage
+```bash
+# Add credentials to .env
+FASO_EMAIL=your-email@example.com
+FASO_PASSWORD=your-password
+
+# Run test
+python main.py test-faso-login
+```
+
+### What Works
+✅ Login with slow typing (anti-bot)
+✅ Click "Works" in left menu
+✅ Click "Add New Artwork"
+✅ Reach the upload form
+✅ Screenshot debugging
+
+### Next Phase
+- Inspect form fields
+- Map metadata to form
+- Upload image
+- Fill all fields
+- Submit artwork
+
+
 ## v7 - Testing Infrastructure (2025-02-08)
 
 ### Added
