@@ -11,11 +11,11 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # API Configuration
-ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "xxxxxxx-xxxxxxx")
 
 # FASO Configuration
-FASO_EMAIL = os.getenv("FASO_EMAIL", "")
-FASO_PASSWORD = os.getenv("FASO_PASSWORD", "")
+FASO_EMAIL = os.getenv("FASO_EMAIL", "xxxx")
+FASO_PASSWORD = os.getenv("FASO_PASSWORD", "xxxx")
 
 # File Paths
 PAINTINGS_BIG_PATH = Path(os.getenv("PAINTINGS_BIG_PATH", "~/Pictures/my-paintings-big")).expanduser()
