@@ -27,24 +27,14 @@ def cli():
 
 
 @cli.command()
-@click.option(
-    '--category',
-    '-c',
-    help='Category folder to process (e.g., landscapes, abstract)',
-)
-@click.option(
-    '--all',
-    'process_all',
-    is_flag=True,
-    help='Process all categories',
-)
-def process(category: str, process_all: bool):
+def process():
     """
-    Process paintings: generate titles, descriptions, and metadata.
+    Process all paintings in the new-paintings folder.
     
-    Examples:
-        python main.py process --category landscapes
-        python main.py process --all
+    Looks for paintings in: Pictures/my-paintings-big/new-paintings/
+    
+    Example:
+        python main.py process
     """
     try:
         # Initialize components
@@ -55,60 +45,41 @@ def process(category: str, process_all: bool):
         
         ui.print_header("Art Processor - Phase 1")
         
-        # Verify paths exist
-        if not PAINTINGS_BIG_PATH.exists():
-            ui.print_error(f"Big paintings folder not found: {PAINTINGS_BIG_PATH}")
-            ui.print_info("Please update PAINTINGS_BIG_PATH in your .env file")
+        # Hard-coded category
+        category = "new-paintings"
+        
+        # Build full path to new-paintings folder
+        new_paintings_path = PAINTINGS_BIG_PATH / category
+        
+        # Verify new-paintings folder exists
+        if not new_paintings_path.exists():
+            ui.print_error(f"New paintings folder not found: {new_paintings_path}")
+            ui.print_info("Please create the folder: Pictures/my-paintings-big/new-paintings/")
             return
         
-        # Get available categories
-        available_categories = file_mgr.get_available_categories()
+        ui.print_header(f"Processing Folder: {category}")
         
-        if not available_categories:
-            ui.print_error("No categories found in paintings folder")
+        # Find all paintings in new-paintings folder
+        painting_pairs = file_mgr.find_painting_files(category)
+        
+        if not painting_pairs:
+            ui.print_warning(f"No paintings found in {new_paintings_path}")
+            ui.print_info("Place JPG files in Pictures/my-paintings-big/new-paintings/")
             return
         
-        # Determine which categories to process
-        if process_all:
-            categories_to_process = available_categories
-        elif category:
-            if category not in available_categories:
-                ui.print_error(f"Category '{category}' not found")
-                ui.print_info(f"Available categories: {', '.join(available_categories)}")
-                return
-            categories_to_process = [category]
-        else:
-            # Interactive selection
-            selected_cat = ui.select_category(available_categories)
-            if not selected_cat:
-                ui.print_warning("Processing cancelled")
-                return
-            categories_to_process = [selected_cat]
+        ui.print_info(f"Found {len(painting_pairs)} painting(s)")
         
-        # Process each category
-        for cat in categories_to_process:
-            ui.print_header(f"Processing Category: {cat}")
-            
-            # Find all paintings in category
-            painting_pairs = file_mgr.find_painting_files(cat)
-            
-            if not painting_pairs:
-                ui.print_warning(f"No paintings found in {cat}")
-                continue
-            
-            ui.print_info(f"Found {len(painting_pairs)} painting(s)")
-            
-            # Process each painting
-            for big_file, instagram_file in painting_pairs:
-                process_single_painting(
-                    big_file,
-                    instagram_file,
-                    cat,
-                    ui,
-                    file_mgr,
-                    analyzer,
-                    metadata_mgr,
-                )
+        # Process each painting
+        for big_file, instagram_file in painting_pairs:
+            process_single_painting(
+                big_file,
+                instagram_file,
+                category,
+                ui,
+                file_mgr,
+                analyzer,
+                metadata_mgr,
+            )
         
         ui.print_success("\nProcessing complete!")
         
@@ -165,9 +136,16 @@ def process_single_painting(
         # Import DIMENSION_UNIT from settings
         from config.settings import DIMENSION_UNIT
         
+        # Determine which file to use for AI analysis
+        # Prefer Instagram version (smaller), fallback to big if not available
+        analyze_file = instagram_file if instagram_file and instagram_file.exists() else big_file
+        
+        if analyze_file == big_file and not instagram_file:
+            ui.print_warning("No Instagram version found - using big version for analysis")
+        
         # Step 1: Generate titles
         ui.print_info("Generating titles...")
-        titles = analyzer.generate_titles(big_file)
+        titles = analyzer.generate_titles(analyze_file)
         
         # Step 2: User selects title
         selected_index = ui.select_title(titles)
@@ -203,7 +181,7 @@ def process_single_painting(
         # Build full medium description for AI
         full_medium = f"{medium} on {substrate}"
         description = analyzer.generate_description(
-            big_file,
+            analyze_file,  # Use Instagram version for analysis
             selected_title,
             full_medium,
             dimensions_formatted,
@@ -228,7 +206,7 @@ def process_single_painting(
             instagram_file_path=new_instagram_path,
             selected_title=selected_title,
             all_titles=titles,
-            description=description,  # Only once!
+            description=description,
             width=width,
             height=height,
             depth=depth,
@@ -241,6 +219,7 @@ def process_single_painting(
             collection=collection,
             price_eur=price,
             creation_date=creation_date,
+            analyzed_from="instagram" if analyze_file == instagram_file else "big",
         )
         
         # Step 14: Save metadata files

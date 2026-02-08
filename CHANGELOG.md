@@ -1,87 +1,77 @@
-# Art Processor v3 - Changelog
+# Art Processor v4 - Changelog
 
-## Changes from v2
+## Changes from v3
 
-### Manual Dimension Input with Individual Components
-- **Changed**: Dimensions are now entered as separate width, height, and depth values
-- **Configurable Units**: Set DIMENSION_UNIT in config/settings.py to "cm" or "in"
-- **Workflow**:
-  1. Enter width (e.g., 60)
-  2. Enter height (e.g., 80)
-  3. Enter depth (e.g., 2, or 0 for flat works)
-- **Stored Format**: JSON contains both individual values and formatted string
-  ```json
-  "dimensions": {
-    "width": 60.0,
-    "height": 80.0,
-    "depth": 2.0,
-    "unit": "cm",
-    "formatted": "60cm x 80cm x 2cm"
-  }
-  ```
+### AI Analysis Now Uses Instagram Version
+- **Changed**: System now analyzes the Instagram version (smaller file) instead of the big version
+- **Why**: Claude API has a 5MB limit per image - Instagram versions are typically under this limit
+- **Behavior**:
+  - Analyzes Instagram version for title generation and description
+  - Still renames BOTH big and Instagram versions to match
+  - Fallback to big version if Instagram version doesn't exist
+- **Metadata**: Tracks which version was analyzed in `analyzed_from` field
 
-### All Previous v2 Features Retained
-- Single folder processing (new-paintings)
-- Separate substrate and medium fields
-- Subject, style, and collection metadata
-- All extensible configuration lists
+### How It Works
 
-## Complete Workflow
-
-1. Place paintings in `Pictures/my-paintings-big/new-paintings/`
-2. Run: `python main.py process`
-3. For each painting:
-   - Generate & select title (5 options)
-   - **Enter width** (number)
-   - **Enter height** (number)
-   - **Enter depth** (number, 0 for flat)
-   - Select substrate (paper, board, canvas, linen)
-   - Select medium (acrylic, oil, watercolor, pen and ink, pencil)
-   - Select subject
-   - Select style
-   - Select collection
-   - Enter price (EUR)
-   - Confirm/edit creation date
-4. System generates description, renames files, saves metadata
-
-## Changing Units
-
-Edit `config/settings.py`:
-```python
-# Set to "cm" for centimeters or "in" for inches
-DIMENSION_UNIT = "cm"  # Change to "in" for inches
+**File Pairing:**
+```
+/my-paintings-big/new-paintings/img001.jpg       (e.g., 8MB)
+/my-paintings-instagram/new-paintings/img001.jpg (e.g., 2MB)
 ```
 
-The unit is saved with each painting's metadata, so you can mix units across different paintings if needed.
+**Processing:**
+1. System finds matching pairs
+2. Uses Instagram version (2MB) to send to Claude API
+3. Generates titles and description
+4. Renames both files to: `bavarian_twilight.jpg`
 
-## Output Example
+**Result:**
+```
+/my-paintings-big/new-paintings/bavarian_twilight.jpg       (8MB, renamed)
+/my-paintings-instagram/new-paintings/bavarian_twilight.jpg (2MB, renamed)
+```
+
+### Metadata Output
 
 ```json
 {
-  "title": {
-    "selected": "Bavarian Twilight"
+  "files": {
+    "big": "/path/to/my-paintings-big/new-paintings/bavarian_twilight.jpg",
+    "instagram": "/path/to/my-paintings-instagram/new-paintings/bavarian_twilight.jpg"
   },
-  "dimensions": {
-    "width": 60.0,
-    "height": 80.0,
-    "depth": 2.0,
-    "unit": "cm",
-    "formatted": "60cm x 80cm x 2cm"
-  },
-  "substrate": "canvas",
-  "medium": "oil",
-  "subject": "landscape",
-  "style": "impressionism",
-  "collection": "oils"
+  "analyzed_from": "instagram",
+  ...
 }
 ```
+
+### Error Handling
+
+If Instagram version is missing:
+- System warns: "No Instagram version found - using big version for analysis"
+- Proceeds with big version (may fail if > 5MB)
+- Still works, just records `analyzed_from: "big"`
+
+## All Previous Features Retained
+
+- Manual width/height/depth input
+- Configurable units (cm/in)
+- Separate substrate and medium
+- Subject, style, collection metadata
+- Single folder processing (new-paintings only)
+- All extensible configuration lists
 
 ## Usage
 
 ```bash
-# Process all paintings in new-paintings folder
-python main.py process
+# Ensure both folders have matching files:
+# Pictures/my-paintings-big/new-paintings/img001.jpg
+# Pictures/my-paintings-instagram/new-paintings/img001.jpg
 
-# Verify configuration
-python main.py verify-config
+python main.py process
 ```
+
+System will:
+1. Find all painting pairs
+2. Analyze Instagram versions (smaller files)
+3. Process interactively
+4. Rename BOTH versions to match the selected title

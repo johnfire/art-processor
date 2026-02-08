@@ -40,6 +40,7 @@ class MetadataManager:
         collection: str,
         price_eur: float,
         creation_date: str,
+        analyzed_from: str = "instagram",
     ) -> Dict[str, Any]:
         """
         Create metadata dictionary.
@@ -64,6 +65,7 @@ class MetadataManager:
             collection: Collection name
             price_eur: Price in euros
             creation_date: Creation date
+            analyzed_from: Which version was used for AI analysis ("instagram" or "big")
             
         Returns:
             Metadata dictionary
@@ -95,7 +97,7 @@ class MetadataManager:
             "price_eur": price_eur,
             "creation_date": creation_date,
             "processed_date": datetime.now().isoformat(),
-            "analyzed_from": "big",
+            "analyzed_from": analyzed_from,
         }
         
         return metadata
