@@ -1,0 +1,29 @@
+{
+  "paintings": {
+    "garden_after_the_storm": {
+      "metadata_path": "/home/christopher/Pictures/processed-metadata/abstracts-inspired-by-my-life-in-central-america/garden_after_the_storm.json",
+      "processed_date": "2026-02-08T13:24:07.048816",
+      "uploads": {
+        "FASO": false
+      }
+    },
+    "sanctuary_of_the_ancient_grove": {
+      "metadata_path": "/home/christopher/Pictures/processed-metadata/abstract-works-stand-alones/sanctuary_of_the_ancient_grove.json",
+      "processed_date": "2026-02-08T13:24:07.048997",
+      "uploads": {
+        "FASO": false
+      }
+    },
+    "seven_flowers_in_wild_grass": {
+      "metadata_path": "/home/christopher/Pictures/processed-metadata/abstracts-tiny-life-biologic-abstract-art/seven_flowers_in_wild_grass.json",
+      "processed_date": "2026-02-08T13:24:07.049177",
+      "uploads": {
+        "FASO": false
+      }
+    }
+  },
+  "platforms": [
+    "FASO"
+  ],
+  "last_updated": "2026-02-08T13:24:07.049179"
+}
