@@ -29,7 +29,7 @@ class AdminMode:
             self.show_main_menu()
             choice = IntPrompt.ask(
                 "\nSelect option",
-                choices=["1", "2", "3", "4", "5", "6", "7", "8", "0"],
+                choices=["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"],
                 default="0"
             )
             
@@ -52,6 +52,8 @@ class AdminMode:
                 self.view_current_settings()
             elif choice == 8:
                 self.generate_skeleton_metadata()
+            elif choice == 9:
+                self.edit_metadata()
     
     def show_main_menu(self):
         """Display the main admin menu."""
@@ -69,6 +71,7 @@ class AdminMode:
         table.add_row("6", "Sync Collection Folders")
         table.add_row("7", "View Current Settings")
         table.add_row("8", "Generate Skeleton Metadata")
+        table.add_row("9", "Edit Metadata")
         table.add_row("0", "Exit Admin Mode")
         
         self.console.print(table)
@@ -382,5 +385,18 @@ class AdminMode:
             return
 
         generate_skeleton_metadata_cli()
+
+        Prompt.ask("\nPress Enter to continue")
+
+    def edit_metadata(self):
+        """Edit metadata files interactively."""
+        from src.metadata_editor import edit_metadata_cli
+
+        self.console.print("\n[bold]Edit Metadata[/bold]")
+        self.console.print(
+            "[dim]Browse and edit metadata files in processed-metadata[/dim]\n"
+        )
+
+        edit_metadata_cli()
 
         Prompt.ask("\nPress Enter to continue")
