@@ -41,9 +41,6 @@ def cli(ctx):
         console.print("  [cyan]python main.py process[/cyan]      - Process paintings")
         console.print("  [cyan]python main.py verify-config[/cyan] - Verify configuration")
         console.print("  [cyan]python main.py admin[/cyan]         - Enter admin mode")
-        console.print("  [cyan]python main.py nothing yet[/cyan]         - Enter nothing yet")
-        console.print("  [cyan]python main.py nothing yet[/cyan]         - Enter nothing yet")
-
         console.print("\nRun with --help for more information")
 
 
@@ -141,8 +138,8 @@ def process():
             
             # Step: Update upload tracker
             ui.print_info("\nUpdating upload tracker...")
-            tracker_path = Path.cwd() / "upload_status.json"
-            tracker = UploadTracker(tracker_path)
+            from config.settings import UPLOAD_TRACKER_PATH
+            tracker = UploadTracker(UPLOAD_TRACKER_PATH)
             
             for filename in processed_filenames:
                 metadata_file = METADATA_OUTPUT_PATH / "new-paintings" / f"{filename}.json"

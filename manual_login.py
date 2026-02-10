@@ -75,8 +75,11 @@ async def manual_login_and_save_cookies():
         
         # Save cookies
         cookies = await context.cookies()
-        cookies_file = Path("faso_cookies.json")
         
+        from config.settings import FASO_COOKIES_PATH
+        cookies_file = FASO_COOKIES_PATH
+        
+        import json
         with open(cookies_file, 'w') as f:
             json.dump(cookies, f, indent=2)
         

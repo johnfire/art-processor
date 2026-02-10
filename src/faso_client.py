@@ -17,7 +17,7 @@ console = Console()
 class FASOClient:
     """Client for interacting with FASO website."""
     
-    def __init__(self, email: str, password: str, headless: bool = False, cookies_file: str = "faso_cookies.json"):
+    def __init__(self, email: str, password: str, headless: bool = False, cookies_file: Path = None):
         """
         Initialize FASO client.
         
@@ -26,11 +26,16 @@ class FASOClient:
             password: FASO account password
             headless: Run browser in headless mode (default: False for debugging)
             cookies_file: Path to save/load cookies for session persistence
+                         If None, uses FASO_COOKIES_PATH from settings
         """
+        if cookies_file is None:
+            from config.settings import FASO_COOKIES_PATH
+            cookies_file = FASO_COOKIES_PATH
+            
         self.email = email
         self.password = password
         self.headless = headless
-        self.cookies_file = Path(cookies_file)
+        self.cookies_file = cookies_file
         
         self.browser: Optional[Browser] = None
         self.context: Optional[BrowserContext] = None
@@ -329,8 +334,10 @@ class FASOClient:
                 console.print(f"[yellow]Current URL: {self.page.url}[/yellow]")
                 
                 # Save screenshot for debugging
-                await self.page.screenshot(path='debug_after_login.png')
-                console.print("[yellow]Screenshot saved as debug_after_login.png[/yellow]")
+                from config.settings import SCREENSHOTS_DIR
+                screenshot_path = SCREENSHOTS_DIR / "debug_after_login.png"
+                await self.page.screenshot(path=str(screenshot_path))
+                console.print(f"[yellow]Screenshot saved as {screenshot_path}[/yellow]")
                 
                 return False
             
@@ -367,8 +374,10 @@ class FASOClient:
                 console.print(f"[yellow]Current URL: {self.page.url}[/yellow]")
                 
                 # Save screenshot for debugging
-                await self.page.screenshot(path='debug_works_page.png')
-                console.print("[yellow]Screenshot saved as debug_works_page.png[/yellow]")
+                from config.settings import SCREENSHOTS_DIR
+                screenshot_path = SCREENSHOTS_DIR / "debug_works_page.png"
+                await self.page.screenshot(path=str(screenshot_path))
+                console.print(f"[yellow]Screenshot saved as {screenshot_path}[/yellow]")
                 
                 return False
             
@@ -382,8 +391,10 @@ class FASOClient:
             console.print(f"[green]Current URL: {self.page.url}[/green]")
             
             # Save screenshot of the form for reference
-            await self.page.screenshot(path='add_artwork_form.png')
-            console.print("[yellow]Screenshot saved as add_artwork_form.png[/yellow]")
+            from config.settings import SCREENSHOTS_DIR
+            screenshot_path = SCREENSHOTS_DIR / "add_artwork_form.png"
+            await self.page.screenshot(path=str(screenshot_path))
+            console.print(f"[yellow]Screenshot saved as {screenshot_path}[/yellow]")
             
             return True
             
@@ -392,8 +403,10 @@ class FASOClient:
             
             # Save error screenshot
             if self.page:
-                await self.page.screenshot(path='debug_error.png')
-                console.print("[yellow]Error screenshot saved as debug_error.png[/yellow]")
+                from config.settings import SCREENSHOTS_DIR
+                screenshot_path = SCREENSHOTS_DIR / "debug_error.png"
+                await self.page.screenshot(path=str(screenshot_path))
+                console.print(f"[yellow]Error screenshot saved as {screenshot_path}[/yellow]")
             
             return False
     

@@ -27,10 +27,17 @@
       "uploads": {
         "FASO": false
       }
+    },
+    "geological_memory_fragment": {
+      "metadata_path": "/home/christopher/ai-workzone/processed-metadata/abstract-works-stand-alones/geological_memory_fragment.json",
+      "processed_date": "2026-02-10T15:42:33.318875",
+      "uploads": {
+        "FASO": false
+      }
     }
   },
   "platforms": [
     "FASO"
   ],
-  "last_updated": "2026-02-10T14:59:30.143709"
+  "last_updated": "2026-02-10T15:42:33.318880"
 }

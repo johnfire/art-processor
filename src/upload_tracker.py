@@ -5,20 +5,25 @@ Tracks which paintings have been uploaded to which platforms.
 
 import json
 from pathlib import Path
-from typing import Dict, List, Set
+from typing import Dict, List
 from datetime import datetime
 
 
 class UploadTracker:
     """Manages upload status tracking for paintings across platforms."""
     
-    def __init__(self, tracker_file: Path):
+    def __init__(self, tracker_file: Path = None):
         """
         Initialize upload tracker.
         
         Args:
             tracker_file: Path to upload_status.json file
+                         If None, uses UPLOAD_TRACKER_PATH from settings
         """
+        if tracker_file is None:
+            from config.settings import UPLOAD_TRACKER_PATH
+            tracker_file = UPLOAD_TRACKER_PATH
+            
         self.tracker_file = tracker_file
         self.data = self._load_tracker()
     

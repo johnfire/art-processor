@@ -29,7 +29,7 @@ class AdminMode:
             self.show_main_menu()
             choice = IntPrompt.ask(
                 "\nSelect option",
-                choices=["1", "2", "3", "4", "5", "6", "0"],
+                choices=["1", "2", "3", "4", "5", "6", "7", "0"],
                 default="0"
             )
             
@@ -47,6 +47,8 @@ class AdminMode:
             elif choice == 5:
                 self.manage_social_platforms()
             elif choice == 6:
+                self.sync_collection_folders()
+            elif choice == 7:
                 self.view_current_settings()
     
     def show_main_menu(self):
@@ -62,7 +64,8 @@ class AdminMode:
         table.add_row("3", "Edit Dimension Unit (cm/in)")
         table.add_row("4", "Add to Lists (Substrates, Mediums, etc.)")
         table.add_row("5", "Manage Social Media Platforms")
-        table.add_row("6", "View Current Settings")
+        table.add_row("6", "Sync Collection Folders")
+        table.add_row("7", "View Current Settings")
         table.add_row("0", "Exit Admin Mode")
         
         self.console.print(table)
@@ -339,5 +342,29 @@ class AdminMode:
                 # Count items (rough count by counting quotes)
                 count = match.group(1).count('"') // 2
                 self.console.print(f"  {display_name}: {count} entries")
+    
+    def sync_collection_folders(self):
+        """Sync collection folders - create any missing folders."""
+        from src.collection_folder_manager import sync_collection_folders_cli
+        
+        self.console.print("\n[bold]Sync Collection Folders[/bold]")
+        self.console.print("[dim]Creates folders for any collections that don't exist yet[/dim]\n")
+        
+        if not Confirm.ask("Proceed with sync?", default=True):
+            return
+        
+        # Run the sync
+        result = sync_collection_folders_cli()
+        
+        # Show results
+        self.console.print(f"\n[bold]Results:[/bold]")
+        self.console.print(f"Total collections: {result['total_collections']}")
+        self.console.print(f"Folders created: {result['missing_count']}")
+        
+        if result['errors']:
+            self.console.print(f"[red]Errors: {len(result['errors'])}[/red]")
+        
+        input("\nPress Enter to continue...")
+
         
         Prompt.ask("\nPress Enter to continue")

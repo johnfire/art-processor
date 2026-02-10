@@ -11,16 +11,41 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # API Configuration
-ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "xxxxxxx-xxxxxxx")
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "xxx")
 
 # FASO Configuration
-FASO_EMAIL = os.getenv("FASO_EMAIL", "xxxx")
-FASO_PASSWORD = os.getenv("FASO_PASSWORD", "xxxx")
+FASO_EMAIL = os.getenv("FASO_EMAIL", "xxx")
+FASO_PASSWORD = os.getenv("FASO_PASSWORD", "xxx")
 
-# File Paths
+# ============================================================================
+# BASE FILE PATHS
+# ============================================================================
 PAINTINGS_BIG_PATH = Path(os.getenv("PAINTINGS_BIG_PATH", "~/ai-workzone/my-paintings-big")).expanduser()
 PAINTINGS_INSTAGRAM_PATH = Path(os.getenv("PAINTINGS_INSTAGRAM_PATH", "~/ai-workzone/my-paintings-instagram")).expanduser()
 METADATA_OUTPUT_PATH = Path(os.getenv("METADATA_OUTPUT_PATH", "~/ai-workzone/processed-metadata")).expanduser()
+
+# ============================================================================
+# DERIVED FILE PATHS
+# All specific file locations derived from base paths above
+# Centralized here for easy configuration and modularity
+# ============================================================================
+
+# Upload tracking
+UPLOAD_TRACKER_PATH = METADATA_OUTPUT_PATH / "upload_status.json"
+
+# Browser cookies and session files
+COOKIES_DIR = Path(os.getenv("COOKIES_DIR", "~/.config/theo-van-gogh/cookies")).expanduser()
+FASO_COOKIES_PATH = COOKIES_DIR / "faso_cookies.json"
+INSTAGRAM_COOKIES_PATH = COOKIES_DIR / "instagram_cookies.json"
+
+# Debug and temporary files
+DEBUG_DIR = Path(os.getenv("DEBUG_DIR", "~/.config/theo-van-gogh/debug")).expanduser()
+SCREENSHOTS_DIR = DEBUG_DIR / "screenshots"
+LOGS_DIR = DEBUG_DIR / "logs"
+
+# Ensure all directories exist
+for directory in [METADATA_OUTPUT_PATH, COOKIES_DIR, DEBUG_DIR, SCREENSHOTS_DIR, LOGS_DIR]:
+    directory.mkdir(parents=True, exist_ok=True)
 
 # ============================================================================
 # MEASUREMENT UNITS
@@ -40,7 +65,6 @@ SUBSTRATES = [
     "Linen",
     "Panel",
     "Paper",
-
 ]
 
 # Medium options
@@ -87,7 +111,7 @@ STYLES = [
 COLLECTIONS = [
     "Sea Beasties from Titan",
     "Landscapes and Cityscapes, Real Places",
-    "Fachwerkhäuser",
+    "Fachwerkh\u00e4user",
     "Imaginary Places",
     "Surreal Botanicals",
     "Drawings",
@@ -100,7 +124,8 @@ COLLECTIONS = [
     "Abstracts, Quantum Cubes Collection",
     "Abstracts, Tiny Life, Biologic Abstract Art",
     "Abstracts, Inspired by my life in Central America",
-    "Meditations"
+    "Meditations",
+    "Fire Stars"
 ]
 
 # Image Processing Settings
@@ -127,6 +152,3 @@ SANITIZE_RULES = {
     ">": "",
     "|": "",
 }
-
-# Ensure output directory exists
-METADATA_OUTPUT_PATH.mkdir(parents=True, exist_ok=True)
