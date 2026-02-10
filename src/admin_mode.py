@@ -29,7 +29,7 @@ class AdminMode:
             self.show_main_menu()
             choice = IntPrompt.ask(
                 "\nSelect option",
-                choices=["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"],
+                choices=["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "0"],
                 default="0"
             )
             
@@ -54,6 +54,8 @@ class AdminMode:
                 self.generate_skeleton_metadata()
             elif choice == 9:
                 self.edit_metadata()
+            elif choice == 10:
+                self.sync_instagram_folders()
     
     def show_main_menu(self):
         """Display the main admin menu."""
@@ -72,6 +74,7 @@ class AdminMode:
         table.add_row("7", "View Current Settings")
         table.add_row("8", "Generate Skeleton Metadata")
         table.add_row("9", "Edit Metadata")
+        table.add_row("10", "Sync Instagram Folders")
         table.add_row("0", "Exit Admin Mode")
         
         self.console.print(table)
@@ -398,5 +401,18 @@ class AdminMode:
         )
 
         edit_metadata_cli()
+
+        Prompt.ask("\nPress Enter to continue")
+
+    def sync_instagram_folders(self):
+        """Sync instagram folder structure to match big paintings."""
+        from src.instagram_folder_sync import sync_instagram_folders_cli
+
+        self.console.print("\n[bold]Sync Instagram Folders[/bold]")
+        self.console.print(
+            "[dim]Reorganize instagram photos to match big folder structure[/dim]\n"
+        )
+
+        sync_instagram_folders_cli()
 
         Prompt.ask("\nPress Enter to continue")
