@@ -20,10 +20,17 @@
       "uploads": {
         "FASO": false
       }
+    },
+    "chromatic_entropy": {
+      "metadata_path": "/home/christopher/ai-workzone/processed-metadata/abstracts/chromatic_entropy.json",
+      "processed_date": "2026-02-10T14:59:30.143699",
+      "uploads": {
+        "FASO": false
+      }
     }
   },
   "platforms": [
     "FASO"
   ],
-  "last_updated": "2026-02-08T13:24:07.049179"
+  "last_updated": "2026-02-10T14:59:30.143709"
 }

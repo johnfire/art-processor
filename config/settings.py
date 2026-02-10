@@ -36,48 +36,71 @@ DIMENSION_UNIT = "cm"
 
 # Substrate options
 SUBSTRATES = [
-    "paper",
-    "board",
-    "canvas",
-    "linen",
+    "Canvas",
+    "Linen",
+    "Panel",
+    "Paper",
+
 ]
 
 # Medium options
 MEDIUMS = [
-    "acrylic",
-    "oil",
-    "watercolor",
-    "pen and ink",
-    "pencil",
+    "Acrylic",
+    "markers and Pens",
+    "Oil",
+    "Watercolor",
+    "Pen and Ink",
+    "Pencil",
+    "Photography",
+    "Wood Block Print"
 ]
 
 # Subject options
 SUBJECTS = [
-    "abstract",
-    "landscape",
-    "cityscape",
-    "sea beasties",
-    "fantasy",
-    "portrait",
+    "Abstract",
+    "Architecture",
+    "Cityscape",
+    "Domestic Animals",
+    "Fantasy",
+    "Figurative",
+    "Genre",
+    "Interior",
+    "Landscape",
+    "Portrait",
+    "Sea Beasties on Titan",
+    "Seascape",
+    "Still Life",
+    "surreal botanical",
+    "Wildlife",
 ]
 
 # Style options
 STYLES = [
-    "abstract",
-    "figurative",
-    "surrealism",
-    "impressionism",
-    "landscape",
-    "cityscape",
+    "Abstract",
+    "Impressionism",
+    "Realism",
+    "surreal",
+    "surrealism"
 ]
 
 # Collection options
 COLLECTIONS = [
     "Sea Beasties from Titan",
-    "Fachwerkhauser",
-    "imaginary places",
-    "oils",
-    "abstracts",
+    "Landscapes and Cityscapes, Real Places",
+    "Fachwerkhäuser",
+    "Imaginary Places",
+    "Surreal Botanicals",
+    "Drawings",
+    "Wood Block Prints",
+    "Oil Paintings",
+    "Other Paintings",
+    "Photography",
+    "Coloring Book Drawings and Finished Works",
+    "Abstract Works, Stand Alones",
+    "Abstracts, Quantum Cubes Collection",
+    "Abstracts, Tiny Life, Biologic Abstract Art",
+    "Abstracts, Inspired by my life in Central America",
+    "Meditations"
 ]
 
 # Image Processing Settings
