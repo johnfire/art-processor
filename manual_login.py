@@ -5,6 +5,7 @@ All browser state (cookies, localStorage, sessions) is saved automatically.
 
 import asyncio
 from pathlib import Path
+from urllib.parse import urlparse
 
 from playwright.async_api import async_playwright
 from rich.console import Console
@@ -83,7 +84,7 @@ async def manual_login_and_save():
         console.print(f"[cyan]Dashboard URL: {final_url}[/cyan]")
 
         # Check if we're on the admin backend (not redirected to public site)
-        if 'data.fineartstudioonline.com' in final_url and '/login' not in final_url.lower():
+        if urlparse(final_url).hostname == 'data.fineartstudioonline.com' and '/login' not in final_url.lower():
             console.print("[bold green]Session verified! Dashboard accessible.[/bold green]")
             marker = BROWSER_PROFILE_DIR / ".logged_in"
             marker.write_text("ok")

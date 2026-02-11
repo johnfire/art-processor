@@ -9,6 +9,7 @@ import re
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple
+from urllib.parse import urlparse
 
 from playwright.async_api import async_playwright, Page, Browser, BrowserContext
 from rich.console import Console
@@ -63,13 +64,13 @@ class FASOUploader:
             return False
 
         # Check if we got redirected away from the admin backend
-        if 'data.fineartstudioonline.com' not in self.page.url:
+        if urlparse(self.page.url).hostname != 'data.fineartstudioonline.com':
             console.print(f"[yellow]Redirected to {self.page.url} — trying direct URL...[/yellow]")
             await self.page.goto('https://data.fineartstudioonline.com/home/')
             await self.page.wait_for_load_state('networkidle')
             await asyncio.sleep(2)
 
-            if 'data.fineartstudioonline.com' not in self.page.url:
+            if urlparse(self.page.url).hostname != 'data.fineartstudioonline.com':
                 console.print("[red]Cannot reach FASO dashboard. Run manual_login.py again.[/red]")
                 await self.close_browser()
                 return False
