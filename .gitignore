@@ -17,6 +17,7 @@ parts/
 sdist/
 var/
 venv/
+htmlcov/
 *.egg-info/
 .installed.cfg
 *.egg
