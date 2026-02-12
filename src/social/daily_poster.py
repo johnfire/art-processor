@@ -190,20 +190,49 @@ def get_image_path(metadata: Dict[str, Any]) -> Path:
     Returns:
         Path to image file, or None if not found
     """
-    # Try instagram version first (smaller file)
-    instagram_path_str = metadata.get("files", {}).get("instagram_file")
-    if instagram_path_str:
-        instagram_path = Path(instagram_path_str)
-        if instagram_path.exists():
-            return instagram_path
+    from config.settings import PAINTINGS_INSTAGRAM_PATH, PAINTINGS_BIG_PATH
 
-    # Fallback to big version
-    big_path_str = metadata.get("files", {}).get("big_file")
-    if big_path_str:
-        big_path = Path(big_path_str)
-        if big_path.exists():
-            return big_path
+    filename_base = metadata.get("filename_base", "")
+    # Use collection_folder if available, otherwise fall back to category
+    collection_folder = metadata.get("collection_folder") or metadata.get("category", "")
 
+    # Try instagram version first (smaller file, optimized for social media)
+    instagram = metadata.get("files", {}).get("instagram")
+    if instagram:
+        # Handle both list and string
+        if isinstance(instagram, list):
+            for p in instagram:
+                path = Path(p)
+                if path.exists():
+                    return path
+        elif isinstance(instagram, str):
+            path = Path(instagram)
+            if path.exists():
+                return path
+
+    # Get actual filename from big file path (handles case mismatches)
+    actual_filename = None
+    big = metadata.get("files", {}).get("big")
+    if big:
+        if isinstance(big, list) and big:
+            actual_filename = Path(big[0]).name
+        elif isinstance(big, str):
+            actual_filename = Path(big).name
+
+    # Construct instagram path using actual filename
+    if actual_filename and collection_folder:
+        constructed_instagram = PAINTINGS_INSTAGRAM_PATH / collection_folder / actual_filename
+        if constructed_instagram.exists():
+            return constructed_instagram
+
+    # Try with filename_base as fallback
+    if filename_base and collection_folder:
+        constructed_instagram = PAINTINGS_INSTAGRAM_PATH / collection_folder / f"{filename_base}.jpg"
+        if constructed_instagram.exists():
+            return constructed_instagram
+
+    # ONLY use big version if instagram truly doesn't exist
+    # Skip big files to avoid Claude API size limits (5MB max)
     return None
 
 

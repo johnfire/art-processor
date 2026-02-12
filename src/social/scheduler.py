@@ -189,8 +189,13 @@ class Scheduler:
 
 
 def _get_image_path(metadata: dict) -> Optional[Path]:
-    """Get the best image path from metadata (prefer instagram, fallback to big)."""
+    """Get the best image path from metadata (prefer instagram, skip big files for social media)."""
+    from config.settings import PAINTINGS_INSTAGRAM_PATH
+
     files = metadata.get("files", {})
+    filename_base = metadata.get("filename_base", "")
+    # Use collection_folder if available, otherwise fall back to category
+    collection_folder = metadata.get("collection_folder") or metadata.get("category", "")
 
     # Try instagram first (smaller, optimized for social)
     instagram = files.get("instagram")
@@ -205,19 +210,28 @@ def _get_image_path(metadata: dict) -> Optional[Path]:
             if path.exists():
                 return path
 
-    # Fallback to big
+    # Get actual filename from big file path (handles case mismatches)
+    actual_filename = None
     big = files.get("big")
     if big:
-        if isinstance(big, list):
-            for p in big:
-                path = Path(p)
-                if path.exists():
-                    return path
+        if isinstance(big, list) and big:
+            actual_filename = Path(big[0]).name
         elif isinstance(big, str):
-            path = Path(big)
-            if path.exists():
-                return path
+            actual_filename = Path(big).name
 
+    # Construct instagram path using actual filename
+    if actual_filename and collection_folder:
+        constructed_instagram = PAINTINGS_INSTAGRAM_PATH / collection_folder / actual_filename
+        if constructed_instagram.exists():
+            return constructed_instagram
+
+    # Try with filename_base as fallback
+    if filename_base and collection_folder:
+        constructed_instagram = PAINTINGS_INSTAGRAM_PATH / collection_folder / f"{filename_base}.jpg"
+        if constructed_instagram.exists():
+            return constructed_instagram
+
+    # ONLY use instagram versions for social media (skip big files)
     return None
 
 
