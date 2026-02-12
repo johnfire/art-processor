@@ -24,11 +24,18 @@ Theo Van Gogh is an art management automation system built for working artists. 
 - **Instagram Folder Sync** — Reorganizes social media photo folders to match the primary collection structure
 - **Admin Mode** — 10 interactive configuration options for managing the entire system
 
-### Phase 2 (In Progress)
+### Phase 2 (Complete, will be modified)
 - **FASO Website Automation** — Playwright-based upload to Fine Art Studio Online with Cloudflare handling
 
-### Phase 3 (Planned)
-- Instagram, Mastodon, Bluesky automation
+We are going to build interfaces to other platforms for artists to display work
+
+### Phase 3 (Partially working)
+- Mastadon works 
+
+Other sites are coming once I have developer accounts
+- Instagram, Bluesky, Facebook, Threads, Linked In, Tiktok, Pixelfed, Cara automation
+
+These features are going to be a seperate AI agent. 
 - Email campaigns to galleries and interior designers
 - Full AI agent for general artist use
 
