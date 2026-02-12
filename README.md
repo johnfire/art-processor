@@ -13,7 +13,7 @@ Theo Van Gogh is an art management automation system built for working artists. 
 ## Features
 
 ### Phase 1 (Complete)
-- **AI-Powered Analysis** — Claude vision API analyzes paintings and generates 5 diverse title options per work
+- **AI-Powered Analysis** — Claude vision API analyzes paintings and generates 10 diverse title options per work (traditional + quantum/mysterious/esoteric themes)
 - **Gallery Descriptions** — Automatically writes collector-focused descriptions covering visual analysis, emotional impact, and technical notes
 - **Smart File Management** — Pairs high-resolution and social media versions, renames files to sanitized titles
 - **Metadata System** — Generates structured JSON and human-readable text files for each painting
@@ -123,15 +123,16 @@ python main.py test-faso-login    # Test FASO website login (Phase 2)
 When you run `python main.py process`, the system walks you through each painting:
 
 1. Displays file information (big + instagram versions)
-2. Asks if you have your own title or want AI generation
-3. If AI: analyzes the painting and presents 5 title options
-4. Prompts for substrate, medium, subject, style, collection
-5. Prompts for dimensions, price, and creation date
-6. Generates a professional gallery description via Claude
-7. Renames files to the sanitized title
-8. Saves metadata as JSON and human-readable text
-9. Moves files into the correct collection folder
-10. Updates the upload tracker
+2. Generates 10 AI title options and displays them
+3. User selects an AI title or enters custom title
+4. User optionally enters notes about the painting (multi-line)
+5. Prompts for substrate, medium, subject, style, collection
+6. Prompts for dimensions, price, and creation date
+7. Generates a professional gallery description via Claude (incorporating user notes)
+8. Renames files to the sanitized title
+9. Saves metadata as JSON and human-readable text
+10. Moves files into the correct collection folder
+11. Updates the upload tracker
 
 ### Admin Mode
 

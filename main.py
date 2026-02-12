@@ -223,23 +223,16 @@ def process_single_painting(
         if analyze_file == big_file and not instagram_file:
             ui.print_warning("No Instagram version found - using big version for analysis")
         
-        # Step 1: Ask if user has their own title
-        has_own_title, user_title = ui.ask_for_user_title()
-        
-        if has_own_title:
-            # User provided their own title
-            selected_title = user_title
-            all_titles = [user_title]  # Store as single-item list for metadata
-        else:
-            # Generate AI titles
-            ui.print_info("Generating titles...")
-            titles = analyzer.generate_titles(analyze_file)
-            
-            # Step 2: User selects from AI-generated titles
-            selected_index = ui.select_title(titles)
-            selected_title = titles[selected_index]
-            all_titles = titles
-        
+        # Step 1: Generate AI titles first
+        ui.print_info("Generating AI titles...")
+        ai_titles = analyzer.generate_titles(analyze_file)
+
+        # Step 2: Show AI titles and let user select or enter custom
+        selected_title, all_titles = ui.select_or_custom_title(ai_titles)
+
+        # Step 2a: Get optional user notes about the painting
+        user_notes = ui.input_painting_notes()
+
         # Step 3: User inputs dimensions manually (width, height, depth)
         width, height, depth, dimensions_formatted = ui.input_dimensions(unit=DIMENSION_UNIT)
         
@@ -275,6 +268,7 @@ def process_single_painting(
             full_medium,
             dimensions_formatted,
             category,
+            user_notes=user_notes,
         )
         
         # Step 12: Rename files

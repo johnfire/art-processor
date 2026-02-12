@@ -56,12 +56,12 @@ class CLIInterface:
     def select_title(self, titles: List[str]) -> int:
         """
         Let user select a title from generated options.
-        
+
         Args:
-            titles: List of 5 title options
-            
+            titles: List of title options
+
         Returns:
-            Index of selected title (0-4)
+            Index of selected title
         """
         self.print_header("Generated Title Options")
         
@@ -77,31 +77,108 @@ class CLIInterface:
         choice = IntPrompt.ask(
             "\nSelect title number",
             default=1,
-            choices=[str(i) for i in range(1, 6)],
+            choices=[str(i) for i in range(1, len(titles) + 1)],
         )
-        
+
         return choice - 1
     
     def ask_for_user_title(self) -> tuple:
         """
         Ask if user has their own title or wants AI to generate.
-        
+
         Returns:
             Tuple of (has_own_title: bool, title: str or None)
         """
         self.print_header("Painting Title")
-        
+
         has_own = Confirm.ask(
             "Do you have a name for this painting?",
             default=False
         )
-        
+
         if has_own:
             title = Prompt.ask("Enter your title for this painting")
             return True, title
         else:
             return False, None
-    
+
+    def select_or_custom_title(self, ai_titles: List[str]) -> tuple:
+        """
+        Display AI-generated titles and let user choose one or enter custom title.
+
+        Args:
+            ai_titles: List of AI-generated title options
+
+        Returns:
+            Tuple of (selected_title: str, all_titles: List[str])
+        """
+        self.print_header("AI-Generated Title Options")
+
+        # Display AI titles in a table
+        table = Table(show_header=True, header_style="bold magenta")
+        table.add_column("No.", style="dim", width=6)
+        table.add_column("Title")
+
+        for i, title in enumerate(ai_titles, 1):
+            table.add_row(str(i), title)
+
+        self.console.print(table)
+
+        # Ask if user wants to use AI title or enter custom
+        use_ai = Confirm.ask(
+            "\nUse one of the AI-generated titles?",
+            default=True
+        )
+
+        if use_ai:
+            # User wants to select an AI title
+            choice = IntPrompt.ask(
+                "Select title number",
+                default=1,
+                choices=[str(i) for i in range(1, len(ai_titles) + 1)],
+            )
+            selected_title = ai_titles[choice - 1]
+            return selected_title, ai_titles
+        else:
+            # User wants to enter custom title
+            custom_title = Prompt.ask("Enter your custom title for this painting")
+            return custom_title, [custom_title]
+
+    def input_painting_notes(self) -> Optional[str]:
+        """
+        Get optional multi-line notes from user about the painting.
+
+        Returns:
+            User notes as a string, or None if skipped
+        """
+        self.print_header("Painting Notes (Optional)")
+        self.console.print("[dim]Enter your notes about the painting to help AI generate a better description.[/dim]")
+        self.console.print("[dim]Press Enter on an empty line to finish, or just Enter to skip.[/dim]\n")
+
+        lines = []
+        first_line = True
+
+        while True:
+            try:
+                if first_line:
+                    line = input()
+                    first_line = False
+                    # If first line is empty, user is skipping
+                    if not line.strip():
+                        return None
+                    lines.append(line)
+                else:
+                    line = input()
+                    # Empty line signals end of input
+                    if not line.strip():
+                        break
+                    lines.append(line)
+            except EOFError:
+                break
+
+        notes = "\n".join(lines).strip()
+        return notes if notes else None
+
     def select_substrate(self) -> str:
         """
         Let user select substrate from predefined options.

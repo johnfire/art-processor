@@ -134,9 +134,9 @@ COLLECTIONS = [
     "Photography",
     "Coloring Book Drawings and Finished Works",
     "Abstract Works, Stand Alones",
-    "Abstracts, Quantum Cubes Collection",
-    "Abstracts, Tiny Life, Biologic Abstract Art",
-    "Abstracts, Inspired by my life in Central America",
+    "Abstracts - Quantum Cubes Collection",
+    "Abstracts - Tiny Life, Biologic Abstract Art",
+    "Abstracts - Inspired by my life in Central America",
     "Meditations",
     "Fire Stars"
 ]

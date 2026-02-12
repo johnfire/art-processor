@@ -66,13 +66,13 @@ class ImageAnalyzer:
     
     def generate_titles(self, image_path: Path) -> List[str]:
         """
-        Generate 5 diverse title options for an artwork.
-        
+        Generate 10 diverse title options for an artwork.
+
         Args:
             image_path: Path to the artwork image
-            
+
         Returns:
-            List of 5 title strings
+            List of 10 title strings
         """
         print(f"  → Analyzing image for title generation...")
         
@@ -111,10 +111,10 @@ class ImageAnalyzer:
         # Extract JSON from response
         try:
             titles = json.loads(response_text)
-            if isinstance(titles, list) and len(titles) == 5:
+            if isinstance(titles, list) and len(titles) == 10:
                 return titles
             else:
-                raise ValueError("Response is not a list of 5 titles")
+                raise ValueError("Response is not a list of 10 titles")
         except (json.JSONDecodeError, ValueError) as e:
             print(f"  ⚠ Warning: Could not parse titles as JSON: {e}")
             print(f"  Raw response: {response_text}")
@@ -124,22 +124,22 @@ class ImageAnalyzer:
     def _extract_titles_from_text(self, text: str) -> List[str]:
         """
         Fallback method to extract titles from non-JSON response.
-        
+
         Args:
             text: Raw text response
-            
+
         Returns:
             List of extracted titles
         """
         # Simple heuristic: look for quoted strings
         import re
         matches = re.findall(r'"([^"]+)"', text)
-        if len(matches) >= 5:
-            return matches[:5]
-        
-        # If that fails, split by lines and take first 5 non-empty
+        if len(matches) >= 10:
+            return matches[:10]
+
+        # If that fails, split by lines and take first 10 non-empty
         lines = [line.strip() for line in text.split('\n') if line.strip()]
-        return lines[:5] if len(lines) >= 5 else lines + ["Untitled"] * (5 - len(lines))
+        return lines[:10] if len(lines) >= 10 else lines + ["Untitled"] * (10 - len(lines))
     
     def generate_description(
         self,
@@ -148,32 +148,40 @@ class ImageAnalyzer:
         medium: str,
         dimensions: str,
         category: str,
+        user_notes: str = None,
     ) -> str:
         """
         Generate a gallery-quality description for an artwork.
-        
+
         Args:
             image_path: Path to the artwork image
             title: Selected title for the artwork
             medium: Medium used (e.g., "Oil on canvas")
             dimensions: Dimensions string (e.g., "60cm x 80cm")
             category: Category of the artwork
-            
+            user_notes: Optional notes from the artist about the painting
+
         Returns:
             Description text
         """
         print(f"  → Generating description...")
-        
+
         # Encode image
         image_data = self._encode_image(image_path)
         media_type = self._get_image_media_type(image_path)
-        
+
+        # Build user notes section if provided
+        user_notes_section = ""
+        if user_notes:
+            user_notes_section = f"\nArtist's Notes: {user_notes}\n"
+
         # Format prompt with metadata
         prompt = DESCRIPTION_GENERATION_PROMPT.format(
             title=title,
             medium=medium,
             dimensions=dimensions,
             category=category,
+            user_notes_section=user_notes_section,
         )
         
         # Call Claude API

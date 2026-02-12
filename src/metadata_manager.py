@@ -51,7 +51,7 @@ class MetadataManager:
             big_file_path: Path to big version
             instagram_file_path: Path to instagram version
             selected_title: The title selected by user
-            all_titles: All 5 generated title options
+            all_titles: All generated title options
             description: Gallery description
             width: Width value
             height: Height value
