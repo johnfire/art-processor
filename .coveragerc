@@ -1,0 +1,11 @@
+[run]
+omit =
+    src/image_analyzer.py
+    src/faso_uploader.py
+    src/faso_client.py
+
+[report]
+omit =
+    src/image_analyzer.py
+    src/faso_uploader.py
+    src/faso_client.py
