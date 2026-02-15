@@ -53,8 +53,9 @@ class FASOUploader:
 
         self.page = self.context.pages[0] if self.context.pages else await self.context.new_page()
 
-        # Verify session is valid
-        await self.page.goto('https://data.fineartstudioonline.com/')
+        # Verify session is valid by navigating directly to the user dashboard
+        dashboard_url = 'https://data.fineartstudioonline.com/cfgeditwebsite.asp?new_login=y&faso_com_auth=y'
+        await self.page.goto(dashboard_url)
         await self.page.wait_for_load_state('networkidle')
         await asyncio.sleep(2)
 
@@ -63,17 +64,10 @@ class FASOUploader:
             await self.close_browser()
             return False
 
-        # Check if we got redirected away from the admin backend
         if urlparse(self.page.url).hostname != 'data.fineartstudioonline.com':
-            console.print(f"[yellow]Redirected to {self.page.url} — trying direct URL...[/yellow]")
-            await self.page.goto('https://data.fineartstudioonline.com/home/')
-            await self.page.wait_for_load_state('networkidle')
-            await asyncio.sleep(2)
-
-            if urlparse(self.page.url).hostname != 'data.fineartstudioonline.com':
-                console.print("[red]Cannot reach FASO dashboard. Run manual_login.py again.[/red]")
-                await self.close_browser()
-                return False
+            console.print("[red]Cannot reach FASO dashboard. Run manual_login.py again.[/red]")
+            await self.close_browser()
+            return False
 
         console.print("[green]Browser started, session valid[/green]")
         return True
