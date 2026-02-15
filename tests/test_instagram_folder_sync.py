@@ -402,9 +402,10 @@ class TestSyncCLI:
         # An orphan file in instagram with no big match
         _touch_image(ig / "misc", "orphan.jpg")
 
+        real_syncer = InstagramFolderSync(big_path=big, instagram_path=ig)
+
         with patch("src.instagram_folder_sync.Confirm.ask", return_value=True), \
-             patch("src.instagram_folder_sync.PAINTINGS_BIG_PATH", big), \
-             patch("src.instagram_folder_sync.PAINTINGS_INSTAGRAM_PATH", ig):
+             patch("src.instagram_folder_sync.InstagramFolderSync", return_value=real_syncer):
             result = sync_instagram_folders_cli()
 
         assert result["flatten_moved"] >= 1
