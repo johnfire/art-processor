@@ -102,3 +102,77 @@ class TestCLIInterface:
             has_own, title = cli.ask_for_user_title()
         assert has_own is False
         assert title is None
+
+    def test_print_success(self):
+        cli = CLIInterface()
+        cli.print_success("all good")
+
+    def test_print_warning(self):
+        cli = CLIInterface()
+        cli.print_warning("watch out")
+
+    def test_print_error(self):
+        cli = CLIInterface()
+        cli.print_error("something broke")
+
+    def test_print_info(self):
+        cli = CLIInterface()
+        cli.print_info("just so you know")
+
+    def test_select_or_custom_title_use_ai(self):
+        cli = CLIInterface()
+        titles = ["Title A", "Title B", "Title C"]
+        with patch("src.cli_interface.Confirm.ask", return_value=True), \
+             patch("src.cli_interface.IntPrompt.ask", return_value=2):
+            selected, all_titles = cli.select_or_custom_title(titles)
+        assert selected == "Title B"
+        assert all_titles == titles
+
+    def test_select_or_custom_title_custom(self):
+        cli = CLIInterface()
+        titles = ["Title A", "Title B"]
+        with patch("src.cli_interface.Confirm.ask", return_value=False), \
+             patch("src.cli_interface.Prompt.ask", return_value="My Own Title"):
+            selected, all_titles = cli.select_or_custom_title(titles)
+        assert selected == "My Own Title"
+        assert all_titles == ["My Own Title"]
+
+    def test_input_painting_notes_skip(self):
+        cli = CLIInterface()
+        with patch("builtins.input", return_value=""):
+            result = cli.input_painting_notes()
+        assert result is None
+
+    def test_input_painting_notes_with_content(self):
+        cli = CLIInterface()
+        responses = iter(["Some notes about the painting", "More notes", ""])
+        with patch("builtins.input", side_effect=responses):
+            result = cli.input_painting_notes()
+        assert result == "Some notes about the painting\nMore notes"
+
+    def test_show_processing_summary(self):
+        cli = CLIInterface()
+        metadata = {
+            "title": {"selected": "Test Painting"},
+            "category": "test-paintings",
+            "medium": "Oil",
+            "dimensions": "30cm x 40cm",
+            "price_eur": 100.0,
+            "creation_date": "2026-01-01",
+            "description": "A test painting.",
+        }
+        cli.show_processing_summary(metadata)  # should not raise
+
+    def test_show_file_info_with_instagram(self, tmp_path):
+        cli = CLIInterface()
+        big = tmp_path / "painting.jpg"
+        big.touch()
+        ig = tmp_path / "painting-ig.jpg"
+        ig.touch()
+        cli.show_file_info(big, ig)  # should not raise
+
+    def test_show_file_info_no_instagram(self, tmp_path):
+        cli = CLIInterface()
+        big = tmp_path / "painting.jpg"
+        big.touch()
+        cli.show_file_info(big, None)  # should not raise

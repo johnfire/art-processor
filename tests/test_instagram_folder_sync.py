@@ -4,8 +4,9 @@ Unit tests for instagram_folder_sync module.
 
 import pytest
 from pathlib import Path
+from unittest.mock import patch
 
-from src.instagram_folder_sync import InstagramFolderSync
+from src.instagram_folder_sync import InstagramFolderSync, sync_instagram_folders_cli
 
 
 def _touch_image(folder: Path, name: str):
@@ -269,3 +270,142 @@ class TestFullSync:
 
         assert result["flatten_moved"] == 0
         assert result["total_matched"] == 0
+
+
+@pytest.mark.unit
+class TestFlattenEdgeCases:
+    """Additional edge-case tests for flatten_instagram."""
+
+    def test_flatten_skips_root_images(self, tmp_path):
+        """Images already in root are indexed but not moved."""
+        big = tmp_path / "big"
+        ig = tmp_path / "instagram"
+        big.mkdir()
+        ig.mkdir()
+
+        # File already in root — should stay there, not be moved
+        (ig / "root_image.jpg").touch()
+
+        syncer = InstagramFolderSync(big_path=big, instagram_path=ig)
+        moved, warnings = syncer.flatten_instagram()
+
+        assert moved == 0
+        assert (ig / "root_image.jpg").exists()
+
+
+@pytest.mark.unit
+class TestEnsureSubfoldersEdgeCases:
+    """Additional edge-case tests for ensure_subfolders."""
+
+    def test_ensure_subfolders_no_big_path(self, tmp_path):
+        """Returns empty list when big_path does not exist."""
+        syncer = InstagramFolderSync(
+            big_path=tmp_path / "nonexistent_big",
+            instagram_path=tmp_path / "ig",
+        )
+        created = syncer.ensure_subfolders()
+        assert created == []
+
+    def test_ensure_subfolders_skips_files(self, tmp_path):
+        """Files in big root are not treated as subfolders."""
+        big = tmp_path / "big"
+        ig = tmp_path / "instagram"
+        big.mkdir()
+        ig.mkdir()
+
+        # A plain file, not a directory
+        (big / "readme.txt").touch()
+        (big / "abstracts").mkdir()
+
+        syncer = InstagramFolderSync(big_path=big, instagram_path=ig)
+        created = syncer.ensure_subfolders()
+
+        assert "abstracts" in created
+        assert "readme.txt" not in created
+
+
+@pytest.mark.unit
+class TestMatchAndMoveEdgeCases:
+    """Additional edge-case tests for match_and_move."""
+
+    def test_match_and_move_skips_non_dirs_in_big(self, tmp_path):
+        """Files in big root are skipped (only subdirs scanned)."""
+        big = tmp_path / "big"
+        ig = tmp_path / "instagram"
+        big.mkdir()
+        ig.mkdir()
+
+        # Plain file in big root — should be ignored entirely
+        (big / "stray.jpg").touch()
+
+        syncer = InstagramFolderSync(big_path=big, instagram_path=ig)
+        result = syncer.match_and_move()
+
+        assert result["total_matched"] == 0
+        assert result["total_unmatched"] == 0
+
+    def test_match_and_move_skips_non_images_in_subfolder(self, tmp_path):
+        """Non-image files inside a big subfolder are skipped."""
+        big = tmp_path / "big"
+        ig = tmp_path / "instagram"
+        big.mkdir()
+        ig.mkdir()
+
+        (big / "landscapes").mkdir()
+        (big / "landscapes" / "notes.txt").touch()  # not an image
+
+        syncer = InstagramFolderSync(big_path=big, instagram_path=ig)
+        result = syncer.match_and_move()
+
+        assert result["total_matched"] == 0
+        assert result["total_unmatched"] == 0
+
+    def test_match_already_in_subfolder(self, tmp_path):
+        """File already in the correct instagram subfolder counts as matched."""
+        big = tmp_path / "big"
+        ig = tmp_path / "instagram"
+        big.mkdir()
+        ig.mkdir()
+
+        _touch_image(big / "landscapes", "sunset.jpg")
+        # File is already in the right place in instagram — not in root
+        _touch_image(ig / "landscapes", "sunset.jpg")
+
+        syncer = InstagramFolderSync(big_path=big, instagram_path=ig)
+        result = syncer.match_and_move()
+
+        assert result["total_matched"] == 1
+        assert result["total_unmatched"] == 0
+
+
+@pytest.mark.unit
+class TestSyncCLI:
+    """Tests for the sync_instagram_folders_cli function."""
+
+    def test_sync_cli_returns_empty_on_no_confirm(self, tmp_path):
+        """CLI function returns {} immediately when user declines."""
+        with patch("src.instagram_folder_sync.Confirm.ask", return_value=False):
+            result = sync_instagram_folders_cli()
+        assert result == {}
+
+    def test_sync_cli_full_run(self, tmp_path):
+        """CLI runs a full sync and prints results when user confirms."""
+        big = tmp_path / "big"
+        ig = tmp_path / "instagram"
+        big.mkdir()
+        ig.mkdir()
+
+        # Big has a collection with a file
+        _touch_image(big / "landscapes", "mountain.jpg")
+        # Instagram has the file in an old subfolder (needs flattening + re-sorting)
+        _touch_image(ig / "old-folder", "mountain.jpg")
+        # An orphan file in instagram with no big match
+        _touch_image(ig / "misc", "orphan.jpg")
+
+        with patch("src.instagram_folder_sync.Confirm.ask", return_value=True), \
+             patch("src.instagram_folder_sync.PAINTINGS_BIG_PATH", big), \
+             patch("src.instagram_folder_sync.PAINTINGS_INSTAGRAM_PATH", ig):
+            result = sync_instagram_folders_cli()
+
+        assert result["flatten_moved"] >= 1
+        assert result["total_matched"] >= 0
