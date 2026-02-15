@@ -1,11 +1,13 @@
 """Tests for social media post text formatter."""
 
 import pytest
+from urllib.parse import urlparse
 from src.social.formatter import (
     format_post_text,
     truncate_description,
     subject_to_hashtag,
     build_hashtags,
+    WEBSITE_URL,
 )
 
 
@@ -96,7 +98,7 @@ class TestFormatPostText:
         assert "#art" in result
         assert "#artforsale" in result
         assert "#abstract" in result
-        assert "artbychristopherrehm.com" in result
+        assert any(urlparse(f"https://{w}").hostname == WEBSITE_URL for w in result.split())
 
     def test_no_description(self):
         metadata = {
@@ -107,7 +109,7 @@ class TestFormatPostText:
         result = format_post_text(metadata)
         assert "Test" in result
         assert "#landscape" in result
-        assert "artbychristopherrehm.com" in result
+        assert any(urlparse(f"https://{w}").hostname == WEBSITE_URL for w in result.split())
 
     def test_long_description_truncated(self):
         long_desc = " ".join(["word"] * 200)
