@@ -124,18 +124,19 @@ class FASOClient:
             return False
         
         try:
-            # Try to go to a page that requires login
-            await self.page.goto('https://data.fineartstudioonline.com/', timeout=10000)
+            # Navigate directly to the user dashboard (requires login)
+            await self.page.goto(
+                'https://data.fineartstudioonline.com/cfgeditwebsite.asp?new_login=y&faso_com_auth=y',
+                timeout=10000,
+            )
             await self.page.wait_for_load_state('networkidle', timeout=5000)
-            
-            # If URL contains 'login', we're not logged in
+
+            # If redirected to login page, session has expired
             if 'login' in self.page.url.lower():
                 return False
-            
-            # Check for indicators of being logged in
-            # (menu, dashboard elements, etc.)
+
             return True
-            
+
         except:
             return False
     
@@ -274,7 +275,16 @@ class FASOClient:
                 return False
             
             console.print(f"[green]✓ Login successful! Current URL: {current_url}[/green]")
-            
+
+            # Navigate directly to the user dashboard
+            console.print("[cyan]Navigating to user dashboard...[/cyan]")
+            await self.page.goto(
+                'https://data.fineartstudioonline.com/cfgeditwebsite.asp?new_login=y&faso_com_auth=y',
+                timeout=10000,
+            )
+            await self.page.wait_for_load_state('networkidle')
+            console.print(f"[green]✓ Dashboard loaded: {self.page.url}[/green]")
+
             # Save cookies for future sessions
             cookies = await self.context.cookies()
             import json
