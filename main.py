@@ -478,6 +478,25 @@ def post_social():
 
 
 @cli.command()
+def cara_login():
+    """Set up persistent Cara browser session (run once before posting)."""
+    from src.social.cara import CaraPlatform
+
+    ui = CLIInterface()
+    ui.print_header("Cara Login Setup")
+
+    try:
+        platform = CaraPlatform()
+        platform.setup_session()
+    except KeyboardInterrupt:
+        ui.print_warning("\nLogin setup cancelled")
+    except Exception as e:
+        ui.print_error(f"Error: {e}")
+        import traceback
+        traceback.print_exc()
+
+
+@cli.command()
 def schedule_post():
     """Schedule a future social media post."""
     from src.social.cli import schedule_post_cli

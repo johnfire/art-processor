@@ -25,6 +25,11 @@ MASTODON_ACCESS_TOKEN = os.getenv("MASTODON_ACCESS_TOKEN", "")
 BLUESKY_HANDLE = os.getenv("BLUESKY_HANDLE", "")
 BLUESKY_APP_PASSWORD = os.getenv("BLUESKY_APP_PASSWORD", "")
 
+# Pixelfed Configuration
+PIXELFED_INSTANCE_URL = os.getenv("PIXELFED_INSTANCE_URL", "")
+PIXELFED_ACCESS_TOKEN = os.getenv("PIXELFED_ACCESS_TOKEN", "")
+PIXELFED_MAX_CAPTION_LENGTH = 2000   # safe default; varies by instance
+
 # Social Media
 SOCIAL_MEDIA_WEBSITE = "artbychristopherrehm.com"
 
