@@ -21,6 +21,10 @@ FASO_PASSWORD = os.getenv("FASO_PASSWORD", "xxx")
 MASTODON_INSTANCE_URL = os.getenv("MASTODON_INSTANCE_URL", "")
 MASTODON_ACCESS_TOKEN = os.getenv("MASTODON_ACCESS_TOKEN", "")
 
+# Bluesky Configuration
+BLUESKY_HANDLE = os.getenv("BLUESKY_HANDLE", "")
+BLUESKY_APP_PASSWORD = os.getenv("BLUESKY_APP_PASSWORD", "")
+
 # Social Media
 SOCIAL_MEDIA_WEBSITE = "artbychristopherrehm.com"
 

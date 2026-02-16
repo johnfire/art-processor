@@ -1,0 +1,512 @@
+Social Media Poster Modules — Claude Code Briefing
+Project: Theo-van-Gogh | Platforms: Pixelfed, Flickr, Tumblr
+
+Project Context
+These three modules are part of the Theo-van-Gogh social media automation system. They live in the social/ folder alongside existing posting scripts. They share a common content package (JSON file) and a common credential/config pattern already established in the project.
+Existing project conventions:
+
+Secrets in .env loaded via python-dotenv
+Config in settings.py
+All poster scripts live in social/
+Content package is a JSON file per artwork with metadata and a path to the image
+
+
+Content Package — JSON Structure
+The existing JSON has image_path, caption, and title. Two fields need to be added to support these platforms:
+json{
+  "image_path": "/path/to/painting.jpg",
+  "title": "Augsburg Cathedral at Dusk",
+  "caption": "Painted in oils during autumn 2025, this piece captures the warm last light on the cathedral facade.",
+  "alt_text": "Oil painting of Augsburg cathedral at dusk, warm golden light on stone facade",
+  "tags": ["art", "painting", "oilpainting", "Bavaria", "Augsburg", "landscapepainting"]
+}
+alt_text — new field. A short plain-English description of the image. Required by Pixelfed for accessibility. Also good practice everywhere. Claude Code should assume this field may be missing and handle it gracefully (fall back to title if absent).
+tags — new field. A list of strings without # prefix. Each module will format them as needed per platform (Pixelfed adds #, Flickr uses space-separated strings, Tumblr uses a list).
+
+Common Return Structure
+All three modules must return the same structured dict so the orchestrator handles them uniformly:
+python# success
+{
+    'success': True,
+    'platform': 'pixelfed',   # or 'flickr' or 'tumblr'
+    'post_id': '12345',        # platform's returned ID or URL
+    'url': 'https://...',      # public URL of the post if available
+    'error': None
+}
+
+# failure
+{
+    'success': False,
+    'platform': 'pixelfed',
+    'post_id': None,
+    'url': None,
+    'error': 'Descriptive error message'
+}
+
+Common Code Style Requirements (all three modules)
+
+Max ~500 lines per module
+Clean, simple code — no over-engineering
+Inline comments throughout for code review
+No hardcoded credentials — .env only
+Config (base URLs, limits, defaults) in settings.py
+Wrap all API calls in try/except, log clearly
+Load the JSON content package from a file path passed as an argument
+A main() function at the bottom for standalone testing from the command line
+
+
+
+SECTION 1 — Pixelfed
+
+Platform Overview
+Pixelfed is a federated, open-source Instagram alternative built on ActivityPub. It is part of the Fediverse. It is image-only — posts without an attached image are not displayed. It is compatible with the Mastodon API, so the Mastodon.py library works directly.
+
+Users: ~1 million across federated instances
+Audience: Artists, photographers, privacy-conscious creatives
+Why it matters for you: Image-first platform, no algorithm manipulation, no ads, discovery via hashtags and federated timeline
+API difficulty: Very easy — identical pattern to Mastodon
+
+API Details
+Pixelfed implements the Mastodon API (v1 endpoints). This means:
+
+Use Mastodon.py — no Pixelfed-specific library needed
+Auth via Personal Access Token (PAT)
+Two-step post: upload media first → get media ID → create status with media ID attached
+Use api/v1/media — not api/v2/media (v2 returns 404 on Pixelfed)
+Posts require at least one image attached
+
+Known quirk: Pixelfed's Mastodon API compatibility is not 100%. Stick to v1 endpoints and basic status/media operations. Avoid any Mastodon-specific features like polls or scheduled posts.
+Installation
+bashpip install Mastodon.py
+Authentication
+Create a Personal Access Token in Pixelfed:
+Settings → Applications → New Application → generate token with read and write scopes.
+.env entries:
+envPIXELFED_INSTANCE_URL=https://pixelfed.social
+PIXELFED_ACCESS_TOKEN=your_access_token_here
+settings.py entries:
+pythonPIXELFED_MAX_CAPTION_LENGTH = 2000   # varies by instance, 2000 is safe default
+PIXELFED_MAX_IMAGES_PER_POST = 10    # Pixelfed allows up to 10
+Module: social/pixelfed_poster.py
+pythonimport os
+import json
+import logging
+from mastodon import Mastodon
+from dotenv import load_dotenv
+
+load_dotenv()
+
+# --- auth ---
+def get_client() -> Mastodon:
+    """Create and return an authenticated Mastodon/Pixelfed client."""
+    return Mastodon(
+        access_token=os.getenv('PIXELFED_ACCESS_TOKEN'),
+        api_base_url=os.getenv('PIXELFED_INSTANCE_URL')
+    )
+
+# --- media upload ---
+def upload_image(client: Mastodon, image_path: str, alt_text: str) -> str:
+    """Upload image to Pixelfed, return media ID."""
+    # Pixelfed uses v1 media endpoint — do not use upload_mediaV2
+    media = client.media_post(
+        media_file=image_path,
+        description=alt_text   # this becomes the alt text
+    )
+    return media['id']
+
+# --- build caption ---
+def build_caption(package: dict) -> str:
+    """Combine caption and tags into a single post string."""
+    caption = package.get('caption', '')
+    tags = package.get('tags', [])
+    # format tags with # prefix
+    tag_string = ' '.join(f'#{t}' for t in tags)
+    full_text = f"{caption}\n\n{tag_string}".strip()
+    # enforce instance limit
+    from settings import PIXELFED_MAX_CAPTION_LENGTH
+    if len(full_text) > PIXELFED_MAX_CAPTION_LENGTH:
+        logging.warning(f"Caption truncated to {PIXELFED_MAX_CAPTION_LENGTH} chars")
+        full_text = full_text[:PIXELFED_MAX_CAPTION_LENGTH - 3] + '...'
+    return full_text
+
+# --- main post function ---
+def post_to_pixelfed(json_path: str) -> dict:
+    """
+    Load content package from JSON and post to Pixelfed.
+    Returns standardised result dict.
+    """
+    try:
+        with open(json_path, 'r') as f:
+            package = json.load(f)
+
+        client = get_client()
+
+        # upload the image — use title as fallback alt text
+        alt_text = package.get('alt_text') or package.get('title', '')
+        media_id = upload_image(client, package['image_path'], alt_text)
+
+        # build caption with tags
+        caption = build_caption(package)
+
+        # create the status (post)
+        status = client.status_post(
+            status=caption,
+            media_ids=[media_id],
+            visibility='public'
+        )
+
+        return {
+            'success': True,
+            'platform': 'pixelfed',
+            'post_id': str(status['id']),
+            'url': status.get('url'),
+            'error': None
+        }
+
+    except Exception as e:
+        logging.error(f"Pixelfed post failed: {e}")
+        return {
+            'success': False,
+            'platform': 'pixelfed',
+            'post_id': None,
+            'url': None,
+            'error': str(e)
+        }
+
+
+if __name__ == '__main__':
+    import sys
+    if len(sys.argv) < 2:
+        print("Usage: python pixelfed_poster.py <path_to_content_package.json>")
+        sys.exit(1)
+    result = post_to_pixelfed(sys.argv[1])
+    print(result)
+Notes & Gotchas
+
+Mastodon.py's media_post() uses v1 under the hood — correct for Pixelfed
+Pixelfed only shows posts with images — never call status_post() without media_ids
+If you also have a Mastodon account, this same module works with a different .env entry and instance URL — worth doing
+Federated timeline means posts are visible across the whole Fediverse, not just pixelfed.social users
+The same get_client() pattern works for Mastodon by just swapping the env vars
+
+
+
+SECTION 2 — Flickr
+
+Platform Overview
+Flickr is one of the oldest and most respected photography platforms online. It has more than 60 million users worldwide and remains a trusted platform for serious image viewers, photographers, and creative professionals. Critically, images on Flickr are indexed by Google — a post here has long-term SEO value that Instagram and Bluesky do not.
+
+Users: 60M+
+Audience: Photographers, serious image viewers, creative professionals, agencies and buyers searching Google Images
+Why it matters for you: Long-term discoverability via search engines, professional credibility, photography community
+API difficulty: Moderate — OAuth 1.0a, well-documented, stable flickrapi library
+
+API Details
+Flickr uses a REST API with OAuth 1.0a authentication. The flickrapi Python library handles the OAuth flow. Uploading a photo is a single API call. Setting title, description, and tags happens either at upload time or as a separate setMeta call.
+
+Official API docs: https://www.flickr.com/services/api/
+Upload endpoint: flickr.photos.upload (via the library's upload() method)
+Format: Multipart form upload
+
+Installation
+bashpip install flickrapi
+Authentication
+
+Create a Flickr account at flickr.com
+Go to https://www.flickr.com/services/apps/create/ and create a new app
+Choose Apply for a non-commercial key
+You receive an API Key and API Secret
+First-time auth requires a browser OAuth flow — after this, tokens are stored and reused
+
+.env entries:
+envFLICKR_API_KEY=your_api_key_here
+FLICKR_API_SECRET=your_api_secret_here
+FLICKR_ACCESS_TOKEN=your_token_here
+FLICKR_ACCESS_TOKEN_SECRET=your_token_secret_here
+Note for Claude Code: The first time this runs it needs to do a browser-based OAuth token exchange. After that, tokens are cached. The module should handle the initial auth flow and store the tokens in .env or a token cache file. See the flickrapi docs for the token_cache_location parameter.
+settings.py entries:
+pythonFLICKR_DEFAULT_IS_PUBLIC = 1      # 1 = public, 0 = private
+FLICKR_DEFAULT_SAFETY_LEVEL = 1   # 1 = safe
+FLICKR_DEFAULT_CONTENT_TYPE = 1   # 1 = photo (not screenshot or other)
+FLICKR_TOKEN_CACHE_PATH = '.flickr_token_cache'
+Module: social/flickr_poster.py
+pythonimport os
+import json
+import logging
+import flickrapi
+from dotenv import load_dotenv
+
+load_dotenv()
+
+# --- auth ---
+def get_client() -> flickrapi.FlickrAPI:
+    """
+    Create and return an authenticated Flickr API client.
+    On first run this triggers a browser OAuth flow.
+    Subsequent runs use the cached token.
+    """
+    from settings import FLICKR_TOKEN_CACHE_PATH
+    flickr = flickrapi.FlickrAPI(
+        os.getenv('FLICKR_API_KEY'),
+        os.getenv('FLICKR_API_SECRET'),
+        format='parsed-json',
+        token_cache_location=FLICKR_TOKEN_CACHE_PATH
+    )
+    # only do the OAuth dance if not already authenticated
+    if not flickr.token_valid(perms='write'):
+        flickr.get_request_token(oauth_callback='oob')
+        authorize_url = flickr.auth_url(perms='write')
+        print(f"Open this URL to authorise Flickr access:\n{authorize_url}")
+        verifier = input("Enter the verifier code from Flickr: ")
+        flickr.get_access_token(verifier)
+    return flickr
+
+# --- build tag string ---
+def build_tags(tags: list) -> str:
+    """Flickr wants tags as a space-separated string. Quote multi-word tags."""
+    return ' '.join(f'"{t}"' if ' ' in t else t for t in tags)
+
+# --- main post function ---
+def post_to_flickr(json_path: str) -> dict:
+    """
+    Load content package from JSON and upload photo to Flickr.
+    Returns standardised result dict.
+    """
+    try:
+        with open(json_path, 'r') as f:
+            package = json.load(f)
+
+        from settings import (
+            FLICKR_DEFAULT_IS_PUBLIC,
+            FLICKR_DEFAULT_SAFETY_LEVEL,
+            FLICKR_DEFAULT_CONTENT_TYPE
+        )
+
+        flickr = get_client()
+
+        tags = build_tags(package.get('tags', []))
+
+        # upload the photo — title, description and tags set at upload time
+        response = flickr.upload(
+            filename=package['image_path'],
+            title=package.get('title', ''),
+            description=package.get('caption', ''),
+            tags=tags,
+            is_public=FLICKR_DEFAULT_IS_PUBLIC,
+            safety_level=FLICKR_DEFAULT_SAFETY_LEVEL,
+            content_type=FLICKR_DEFAULT_CONTENT_TYPE
+        )
+
+        # extract the photo ID from the response
+        photo_id = response['photoid']['_content']
+        photo_url = f"https://www.flickr.com/photos/{os.getenv('FLICKR_USER_ID')}/{photo_id}/"
+
+        return {
+            'success': True,
+            'platform': 'flickr',
+            'post_id': photo_id,
+            'url': photo_url,
+            'error': None
+        }
+
+    except Exception as e:
+        logging.error(f"Flickr post failed: {e}")
+        return {
+            'success': False,
+            'platform': 'flickr',
+            'post_id': None,
+            'url': None,
+            'error': str(e)
+        }
+
+
+if __name__ == '__main__':
+    import sys
+    if len(sys.argv) < 2:
+        print("Usage: python flickr_poster.py <path_to_content_package.json>")
+        sys.exit(1)
+    result = post_to_flickr(sys.argv[1])
+    print(result)
+Additional .env entry needed
+envFLICKR_USER_ID=your_flickr_user_id   # needed to construct the photo URL
+Find your Flickr user ID at: https://www.flickr.com/services/api/explore/flickr.people.findByUsername
+Notes & Gotchas
+
+First run requires a browser for the OAuth token exchange. This is a one-time step. After that it runs headlessly from the token cache. Claude Code should implement this gracefully.
+Multi-word tags must be quoted in the tag string — "oil painting" not oil painting
+Flickr photo URLs require your user ID — add FLICKR_USER_ID to .env
+parsed-json format in the constructor makes responses easy to work with
+Flickr's API is stable and well-maintained — this is one of the most reliable integrations in the stack
+Images on Flickr are indexed by Google Images — use keyword-rich titles and descriptions for SEO value
+
+
+
+SECTION 3 — Tumblr
+
+Platform Overview
+Tumblr has over 520 million users and remains influential for artists, photographers, and writers — particularly for reaching younger and more experimental audiences. It supports image posts natively and has a strong culture of reblogging (sharing), which means a single good post can spread far beyond your original followers. It has a well-maintained Python library.
+
+Users: 520M+
+Audience: Artists, creatives, younger demographics, niche communities
+Why it matters for you: High reach via reblogging, strong art community, image posts are first-class, long-form caption supported
+API difficulty: Easy — clean OAuth 2.0, well-documented pytumblr library
+
+API Details
+Tumblr uses OAuth 1.0a for authentication (despite being a newer platform). The pytumblr library handles this cleanly. Photo posts are created via create_photo() with a local file path or URL. Tags are passed as a list of strings.
+
+Official API docs: https://www.tumblr.com/docs/en/api/v2
+Library: pytumblr (official Tumblr Python client)
+
+Installation
+bashpip install pytumblr
+Authentication
+
+Go to https://www.tumblr.com/oauth/apps and register a new application
+You receive a Consumer Key and Consumer Secret
+You then need to generate an OAuth Token and OAuth Secret via the OAuth flow
+Use Tumblr's OAuth console at https://api.tumblr.com/console to do this interactively the first time
+
+.env entries:
+envTUMBLR_CONSUMER_KEY=your_consumer_key
+TUMBLR_CONSUMER_SECRET=your_consumer_secret
+TUMBLR_OAUTH_TOKEN=your_oauth_token
+TUMBLR_OAUTH_SECRET=your_oauth_secret
+TUMBLR_BLOG_NAME=your-blog-name   # e.g. christopher-rehm (without .tumblr.com)
+settings.py entries:
+pythonTUMBLR_DEFAULT_STATE = 'published'   # or 'draft' for review before publishing
+TUMBLR_MAX_TAGS = 30                 # Tumblr allows up to 30 tags per post
+Module: social/tumblr_poster.py
+pythonimport os
+import json
+import logging
+import pytumblr
+from dotenv import load_dotenv
+
+load_dotenv()
+
+# --- auth ---
+def get_client() -> pytumblr.TumblrRestClient:
+    """Create and return an authenticated Tumblr client."""
+    return pytumblr.TumblrRestClient(
+        consumer_key=os.getenv('TUMBLR_CONSUMER_KEY'),
+        consumer_secret=os.getenv('TUMBLR_CONSUMER_SECRET'),
+        oauth_token=os.getenv('TUMBLR_OAUTH_TOKEN'),
+        oauth_secret=os.getenv('TUMBLR_OAUTH_SECRET')
+    )
+
+# --- build caption ---
+def build_caption(package: dict) -> str:
+    """
+    Tumblr captions support basic HTML.
+    Combine title, caption text and formatted tags.
+    """
+    title = package.get('title', '')
+    caption = package.get('caption', '')
+    tags = package.get('tags', [])
+    # build a simple HTML caption: bold title, then caption text
+    parts = []
+    if title:
+        parts.append(f"<b>{title}</b>")
+    if caption:
+        parts.append(caption)
+    return '<br><br>'.join(parts)
+
+# --- main post function ---
+def post_to_tumblr(json_path: str) -> dict:
+    """
+    Load content package from JSON and post photo to Tumblr.
+    Returns standardised result dict.
+    """
+    try:
+        with open(json_path, 'r') as f:
+            package = json.load(f)
+
+        from settings import TUMBLR_DEFAULT_STATE, TUMBLR_MAX_TAGS
+
+        client = get_client()
+        blog_name = os.getenv('TUMBLR_BLOG_NAME')
+
+        # enforce tag limit
+        tags = package.get('tags', [])[:TUMBLR_MAX_TAGS]
+
+        caption = build_caption(package)
+
+        # create_photo accepts a local file path via 'data' parameter
+        response = client.create_photo(
+            blogname=blog_name,
+            state=TUMBLR_DEFAULT_STATE,
+            tags=tags,
+            caption=caption,
+            data=package['image_path']   # local file path
+        )
+
+        # response contains the post ID on success
+        if 'id' not in response:
+            raise Exception(f"Unexpected response: {response}")
+
+        post_id = str(response['id'])
+        post_url = f"https://{blog_name}.tumblr.com/post/{post_id}"
+
+        return {
+            'success': True,
+            'platform': 'tumblr',
+            'post_id': post_id,
+            'url': post_url,
+            'error': None
+        }
+
+    except Exception as e:
+        logging.error(f"Tumblr post failed: {e}")
+        return {
+            'success': False,
+            'platform': 'tumblr',
+            'post_id': None,
+            'url': None,
+            'error': str(e)
+        }
+
+
+if __name__ == '__main__':
+    import sys
+    if len(sys.argv) < 2:
+        print("Usage: python tumblr_poster.py <path_to_content_package.json>")
+        sys.exit(1)
+    result = post_to_tumblr(sys.argv[1])
+    print(result)
+Notes & Gotchas
+
+pytumblr is the official Tumblr client — well maintained and reliable
+The data parameter in create_photo() accepts a local file path directly — no separate upload step needed
+Tumblr captions support basic HTML — <b>, <i>, <br> all work. Keep it simple.
+Tags are a plain Python list — no # prefix, no quoting needed
+The state='draft' option in settings.py is useful during testing — posts to drafts, not publicly
+Tumblr's reblog culture means a single post can spread far — use relevant tags for discoverability
+Blog name in the URL does not include .tumblr.com
+
+
+
+Summary — What Claude Code Needs to Build
+FilePlatformLibraryAuth MethodDifficultysocial/pixelfed_poster.pyPixelfedMastodon.pyPAT (Personal Access Token)Easysocial/flickr_poster.pyFlickrflickrapiOAuth 1.0a + token cacheModeratesocial/tumblr_poster.pyTumblrpytumblrOAuth 1.0a (4 keys in .env)Easy
+Content Package JSON — Required Fields Summary
+FieldPixelfedFlickrTumblrStatusimage_path✅ required✅ required✅ requiredAlready existstitleoptional✅ required✅ requiredAlready existscaption✅ required✅ required✅ requiredAlready existsalt_text✅ requirednot usednot usedNeeds addingtags✅ required✅ required✅ requiredNeeds adding
+Dependencies to Install
+bashpip install Mastodon.py flickrapi pytumblr python-dotenv
+
+Document generated for Theo-van-Gogh project — Pixelfed, Flickr and Tumblr poster modules.
+
+That's the complete briefing document. Copy it as a .md file and hand it to Claude Code. A few things to flag before you do:
+Flickr one-time setup — the first run needs a browser for the OAuth token exchange. Make sure you do that initial authorisation step before testing headlessly.
+alt_text and tags — these need adding to your content package JSON. Worth doing before building the modules, since they feed all three platforms.
+Mastodon reuse — once Pixelfed is working, if you have a Mastodon account too, you get a second platform for free by duplicating the script with different .env vars.ok ill set up the fields that dont exist. are your tools working again can we create a big document with all of this for claude code? or i can wait til it comes back on line5:57 PMLet me test quickly.Test if bash is workingTest if bash is workingScriptDoneStill down. Don't wait on it — the document is already fully written in this conversation. Here's the practical solution:
+Just copy it directly from the chat. Everything from the "# Social Media Poster Modules — Claude Code Briefing" heading all the way down to the final dependencies block is the complete document. Select it all, paste it into a file called social_posters_briefing.md in your project, and hand it to Claude Code.
+It includes everything Claude Code needs:
+
+Full context and project conventions
+The updated JSON content package structure with the two new fields
+All three complete module implementations with inline comments
+Auth setup instructions for each platform
+.env and settings.py entries for each platform
+All gotchas and edge cases called out
+The summary tables at the end
+
+When the environment comes back online I can generate it as a proper downloadable file, but honestly there's nothing stopping you from starting right now. The content is all there.

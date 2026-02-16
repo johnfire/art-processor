@@ -95,7 +95,12 @@ def post_social_cli():
 
     # Verify credentials
     console.print(f"\n[cyan]Verifying {platform.display_name} credentials...[/cyan]")
-    if not platform.verify_credentials():
+    try:
+        ok = platform.verify_credentials()
+    except Exception as e:
+        console.print(f"[red]{platform.display_name} login error: {e}[/red]")
+        return
+    if not ok:
         console.print(f"[red]{platform.display_name} credentials are invalid. Check your .env file.[/red]")
         return
     console.print(f"[green]Authenticated with {platform.display_name}[/green]")
