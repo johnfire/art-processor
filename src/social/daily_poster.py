@@ -312,6 +312,8 @@ def post_to_all_platforms(
                 console.print(f"  [red]{platform.display_name}: Invalid credentials[/red]")
                 results["failed"].append(platform_name)
                 results["warnings"].append(f"{platform.display_name} credentials invalid")
+                from src.social.post_logger import log_credential_failure
+                log_credential_failure(platform_name)
                 continue
 
             # Post
@@ -323,15 +325,21 @@ def post_to_all_platforms(
                 console.print(f"  [green]✓ {platform.display_name} posted[/green]")
                 _update_platform_metadata(metadata, platform_name, current_round, result.post_url)
                 results["succeeded"].append(platform_name)
+                from src.social.post_logger import log_post_success
+                log_post_success(platform_name, title, image_path, result.post_url)
             else:
                 console.print(f"  [red]✗ {platform.display_name} failed: {result.error}[/red]")
                 results["failed"].append(platform_name)
                 results["warnings"].append(f"{platform.display_name}: {result.error}")
+                from src.social.post_logger import log_post_failure
+                log_post_failure(platform_name, title, image_path, result.error)
 
         except Exception as e:
             console.print(f"  [red]✗ {platform.display_name} error: {e}[/red]")
             results["failed"].append(platform_name)
             results["warnings"].append(f"{platform.display_name}: {str(e)}")
+            from src.social.post_logger import log_post_failure
+            log_post_failure(platform_name, title, image_path, str(e))
 
     # Save updated metadata
     with open(metadata_path, "w") as f:

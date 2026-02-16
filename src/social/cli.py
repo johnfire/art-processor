@@ -207,9 +207,14 @@ def post_social_cli():
             _update_social_media_tracking(metadata_path, metadata, platform_name, result.post_url)
             succeeded.append(title)
             _notify_post_success(title, platform_name, result.post_url)
+            from src.social.post_logger import log_post_success
+            log_post_success(platform_name, title, image_path, result.post_url)
         else:
             console.print(f"  [red]Failed: {result.error}[/red]")
+            console.print(f"  [dim]Failure logged to: ~/.config/theo-van-gogh/debug/logs/social.log[/dim]")
             failed.append(title)
+            from src.social.post_logger import log_post_failure
+            log_post_failure(platform_name, title, image_path, result.error)
 
     # Summary
     console.print(f"\n[bold]Results:[/bold]")
