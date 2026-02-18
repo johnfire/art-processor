@@ -7,6 +7,7 @@ import json
 import subprocess
 from datetime import datetime
 from pathlib import Path
+from typing import Optional
 
 from rich.console import Console
 from rich.prompt import Prompt, Confirm, IntPrompt
@@ -17,7 +18,7 @@ console = Console()
 _LOG_FILE = Path("~/.config/theo-van-gogh/social_post_log.txt").expanduser()
 
 
-def _notify_post_success(title: str, platform_name: str, post_url: str | None) -> None:
+def _notify_post_success(title: str, platform_name: str, post_url: Optional[str]) -> None:
     """Log and send a desktop notification for a successful social media post."""
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     url_part = f" — {post_url}" if post_url else ""
