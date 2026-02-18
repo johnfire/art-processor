@@ -3,9 +3,19 @@ omit =
     src/image_analyzer.py
     src/faso_uploader.py
     src/faso_client.py
+    src/social/cli.py
+    src/admin_mode.py
+    src/social/daily_poster.py
+    src/mark_faso_uploaded.py
+    src/generate_instagram_images.py
 
 [report]
 omit =
     src/image_analyzer.py
     src/faso_uploader.py
     src/faso_client.py
+    src/social/cli.py
+    src/admin_mode.py
+    src/social/daily_poster.py
+    src/mark_faso_uploaded.py
+    src/generate_instagram_images.py
