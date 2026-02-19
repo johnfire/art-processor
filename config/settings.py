@@ -72,7 +72,7 @@ INSTAGRAM_COOKIES_PATH = COOKIES_DIR / "instagram_cookies.json"
 # Debug and temporary files
 DEBUG_DIR = Path(os.getenv("DEBUG_DIR", "~/.config/theo-van-gogh/debug")).expanduser()
 SCREENSHOTS_DIR = DEBUG_DIR / "screenshots"
-LOGS_DIR = DEBUG_DIR / "logs"
+LOGS_DIR = Path(os.getenv("LOGS_DIR", "~/logs")).expanduser()
 
 # Ensure all directories exist
 for directory in [METADATA_OUTPUT_PATH, COOKIES_DIR, DEBUG_DIR, SCREENSHOTS_DIR, LOGS_DIR, VIDEOS_PATH]:
