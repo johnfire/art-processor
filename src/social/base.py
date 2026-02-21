@@ -65,6 +65,7 @@ SOCIAL_MEDIA_PLATFORMS = [
     "threads",
     "pixelfed",
     "flickr",
+    "upscrolled",
 ]
 
 

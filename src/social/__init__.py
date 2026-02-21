@@ -21,6 +21,7 @@ _PLATFORM_REGISTRY = {
     "pixelfed": ("src.social.pixelfed", "PixelfedPlatform"),
     "tumblr": ("src.social.tumblr", "TumblrPlatform"),
     "flickr": ("src.social.flickr", "FlickrPlatform"),
+    "upscrolled": ("src.social.upscrolled", "UpScrolledPlatform"),
 }
 
 
