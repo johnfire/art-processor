@@ -30,6 +30,14 @@ PIXELFED_INSTANCE_URL = os.getenv("PIXELFED_INSTANCE_URL", "")
 PIXELFED_ACCESS_TOKEN = os.getenv("PIXELFED_ACCESS_TOKEN", "")
 PIXELFED_MAX_CAPTION_LENGTH = 2000   # safe default; varies by instance
 
+# Flickr Configuration
+# Register an app at https://www.flickr.com/services/apps/create/apply/
+# Then authorise it at https://www.flickr.com/services/oauth/ to get token + secret
+FLICKR_API_KEY = os.getenv("FLICKR_API_KEY", "")
+FLICKR_API_SECRET = os.getenv("FLICKR_API_SECRET", "")
+FLICKR_OAUTH_TOKEN = os.getenv("FLICKR_OAUTH_TOKEN", "")
+FLICKR_OAUTH_SECRET = os.getenv("FLICKR_OAUTH_SECRET", "")
+
 # Tumblr Configuration
 TUMBLR_CONSUMER_KEY = os.getenv("TUMBLR_CONSUMER_KEY", "")
 TUMBLR_CONSUMER_SECRET = os.getenv("TUMBLR_CONSUMER_SECRET", "")

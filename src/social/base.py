@@ -64,6 +64,7 @@ SOCIAL_MEDIA_PLATFORMS = [
     "cara",
     "threads",
     "pixelfed",
+    "flickr",
 ]
 
 

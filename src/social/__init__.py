@@ -20,6 +20,7 @@ _PLATFORM_REGISTRY = {
     "threads": ("src.social.threads", "ThreadsPlatform"),
     "pixelfed": ("src.social.pixelfed", "PixelfedPlatform"),
     "tumblr": ("src.social.tumblr", "TumblrPlatform"),
+    "flickr": ("src.social.flickr", "FlickrPlatform"),
 }
 
 
