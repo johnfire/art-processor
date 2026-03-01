@@ -11,12 +11,12 @@ import click
 from rich.console import Console
 from rich.prompt import Confirm
 
-from src.image_analyzer import ImageAnalyzer
-from src.file_manager import FileManager
-from src.metadata_manager import MetadataManager
-from src.cli_interface import CLIInterface
-from src.admin_mode import AdminMode
-from src.app_logger import configure_logging, get_logger
+from src.app.services.image_analyzer import ImageAnalyzer
+from src.app.services.file_manager import FileManager
+from src.app.services.metadata_manager import MetadataManager
+from src.app.services.cli_interface import CLIInterface
+from src.app.services.admin_mode import AdminMode
+from src.core.logger import configure_logging, get_logger
 from config.settings import PAINTINGS_BIG_PATH, PAINTINGS_INSTAGRAM_PATH
 
 
@@ -125,8 +125,8 @@ def process():
             ui.print_header("\nOrganizing Paintings")
             ui.print_info("Moving paintings to collection folders...")
             
-            from src.file_organizer import FileOrganizer
-            from src.upload_tracker import UploadTracker
+            from src.app.services.file_organizer import FileOrganizer
+            from src.app.services.upload_tracker import UploadTracker
             from config.settings import METADATA_OUTPUT_PATH
             
             organizer = FileOrganizer(
@@ -380,7 +380,7 @@ def verify_config():
 def test_faso_login():
     """Test FASO login and navigation (Phase 2)."""
     import asyncio
-    from src.faso_client import test_faso_login
+    from src.app.galleries.faso_client import test_faso_login
     from config.settings import FASO_EMAIL, FASO_PASSWORD
     
     ui = CLIInterface()
@@ -444,7 +444,7 @@ def verify_config_old():
 @cli.command()
 def upload_faso():
     """Upload artwork to FASO (Fine Art Studio Online)."""
-    from src.faso_uploader import upload_faso_cli
+    from src.app.galleries.faso_uploader import upload_faso_cli
 
     ui = CLIInterface()
     ui.print_header("FASO Upload")
@@ -461,8 +461,8 @@ def upload_faso():
 @cli.command()
 def post_social():
     """Post artwork to social media platforms."""
-    from src.social.cli import post_social_cli
-    from src.activity_log import log_activity
+    from src.app.social.cli import post_social_cli
+    from src.app.services.activity_log import log_activity
 
     ui = CLIInterface()
     ui.print_header("Social Media Post")
@@ -480,7 +480,7 @@ def post_social():
 @cli.command()
 def cara_login():
     """Set up persistent Cara browser session (run once before posting)."""
-    from src.social.cara import CaraPlatform
+    from src.app.social.cara import CaraPlatform
 
     ui = CLIInterface()
     ui.print_header("Cara Login Setup")
@@ -499,7 +499,7 @@ def cara_login():
 @cli.command()
 def schedule_post():
     """Schedule a future social media post."""
-    from src.social.cli import schedule_post_cli
+    from src.app.social.cli import schedule_post_cli
 
     ui = CLIInterface()
     ui.print_header("Schedule Post")
@@ -516,8 +516,8 @@ def schedule_post():
 @cli.command()
 def check_schedule():
     """Execute pending scheduled posts (designed for cron job)."""
-    from src.social.cli import check_schedule_cli
-    from src.activity_log import log_activity
+    from src.app.social.cli import check_schedule_cli
+    from src.app.services.activity_log import log_activity
 
     log_activity("CLI: check-schedule")
     try:
@@ -539,8 +539,8 @@ def daily_post():
     Example:
         python main.py daily-post
     """
-    from src.social.daily_poster import run_daily_post
-    from src.activity_log import log_activity
+    from src.app.social.daily_poster import run_daily_post
+    from src.app.services.activity_log import log_activity
     from config.settings import METADATA_OUTPUT_PATH
 
     ui = CLIInterface()
