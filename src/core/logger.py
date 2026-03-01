@@ -1,5 +1,6 @@
 """Central logger factory for theo-van-gogh."""
 import logging
+from datetime import datetime
 
 from config.settings import LOGS_DIR
 
@@ -11,6 +12,8 @@ def configure_logging() -> None:
         return
     root.setLevel(logging.DEBUG)
     handler = logging.FileHandler(LOGS_DIR / "app.log", encoding="utf-8")
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    handler.stream.write(f"\n{'x' * 22} {now} {'x' * 22}\n")
     handler.setFormatter(logging.Formatter(
         "%(asctime)s %(levelname)-8s %(name)-28s %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",

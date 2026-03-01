@@ -38,8 +38,11 @@ def _get_logger() -> logging.Logger:
 
     logger = logging.getLogger("theo.social.posts")
     if not logger.handlers:
+        from datetime import datetime
         log_file = LOGS_DIR / "social.log"
         handler = logging.FileHandler(log_file, encoding="utf-8")
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        handler.stream.write(f"\n{'x' * 22} {now} {'x' * 22}\n")
         handler.setFormatter(logging.Formatter("%(message)s"))
         logger.addHandler(handler)
         logger.setLevel(logging.DEBUG)
