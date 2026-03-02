@@ -77,19 +77,24 @@ class CaraPlatform(SocialPlatform):
                 user_data_dir=str(self.profile_dir),
                 headless=True,
                 viewport={"width": 1920, "height": 1080},
+                user_agent=(
+                    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+                    "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+                ),
                 args=["--disable-blink-features=AutomationControlled"],
             )
-            await context.add_init_script(
-                "Object.defineProperty(navigator, 'webdriver', { get: () => undefined });"
-            )
+            await context.add_init_script("""
+                Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+                Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3] });
+                window.chrome = { runtime: {} };
+            """)
 
             try:
                 page = context.pages[0] if context.pages else await context.new_page()
 
                 # Navigate to Cara home
-                await page.goto(CARA_HOME)
-                await page.wait_for_load_state("domcontentloaded")
-                await asyncio.sleep(2)
+                await page.goto(CARA_HOME, wait_until="load")
+                await asyncio.sleep(3)
                 await page.screenshot(path=str(SCREENSHOTS_DIR / "cara_01_home.png"))
 
                 # Session expired check — redirected away from cara.app
@@ -98,6 +103,13 @@ class CaraPlatform(SocialPlatform):
                     return PostResult(
                         success=False,
                         error="Cara session expired. Run: python main.py cara-login"
+                    )
+
+                # Cloudflare bot-detection check
+                if "Verify you are human" in await page.content() or "cf-challenge" in await page.content():
+                    return PostResult(
+                        success=False,
+                        error="Cara: blocked by Cloudflare bot detection. Try running cara-login again to refresh the session."
                     )
 
                 # Wait for the React app to hydrate, then click the Post button.
