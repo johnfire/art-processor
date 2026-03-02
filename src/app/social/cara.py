@@ -75,7 +75,7 @@ class CaraPlatform(SocialPlatform):
         async with async_playwright() as p:
             context = await p.chromium.launch_persistent_context(
                 user_data_dir=str(self.profile_dir),
-                headless=False,
+                headless=True,
                 viewport={"width": 1920, "height": 1080},
                 args=["--disable-blink-features=AutomationControlled"],
             )
